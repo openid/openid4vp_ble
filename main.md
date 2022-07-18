@@ -348,3 +348,5 @@ ToDo: Fix the language to be less ISOy.
 - not requiring nor recommending BLE secure connections.
 - no support for the Peropheral role.
 - did not define a custom URL scheme that can open any compliant wallet.
+
+{backmatter}
