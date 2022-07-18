@@ -17,6 +17,23 @@ fullname="Kristina Yasuda"
 organization="Microsoft"
     [author.address]
     email = "kristina.yasuda@microsoft.com"
+
+[[author]]
+initials="K."
+surname="Nakamura"
+fullname="Kenichi Nakamura"
+organization="Panasonic"
+    [author.address]
+    email = "nakamura.kenken@jp.panasonic.com"
+
+[[author]]
+initials="T."
+surname="Lodderstedt"
+fullname="Torsten Lodderstedt"
+organization="yes.com"
+    [author.address]
+    email = "torsten@lodderstedt.net"
+
 %%%
 
 .# Abstract
@@ -96,11 +113,102 @@ Figure: OpenID4VP over BLE Protocol Flow
 
 ToDo: Don't think Wallet has means to interact with the User to authenticate and get consent...
 
-# Connection Setup
+# BLE Connection
 
 Wallet and the Verifier MUST support the Central role. The Wallet MUST act as GATT client. This is called client central mode.
 
 ToDo: rename central client mode as being less ISOy?
+
+The UUID’s used MUST be 16-byte UUID’s that are unique for the transaction. The Peripheral device MUST broadcast the service with the UUID as received during device engagement in the advertising packet. The Central device is then able to scan for the UUID and connect to the advertised service. However, the Central device may use a different mechanisms to identify the Peripheral device.
+
+NOTE BLE stacks in mobile devices can use scan filter and caching methods to manage congested environments and manage scan intervals for device energy consumption control. This can influence the connection time required when using UUIDs for the identification of the Peripheral device. 
+
+NOTE Finding the correct device to connect to is purely a practical problem. Connecting to the wrong Verifier does not have security implications, since due to the security methods described in Clause 9, the Wallet and Verifier will not setup a session with the wrong Verifier. Note however, that these mechanisms do not provide complete protection against a bad actor aiming to cause a denial of service attack by advertising as a fake Verifier
+
+## UUID for Service Definition {#service-definition}
+
+The Verifier service MUST contain the following characteristics, since the Verifier acts as the GATT server. The service MAY contain other properties.
+
+|Characteristic	name | UUID | Mandatory	properties |
+| ---|---|---|
+|State| 00000005-5026-444A-9E0E-D6F2450F3A77 | Notify |
+|Client2Server| 00000006-5026-444A-9E0E-D6F2450F3A77 | Write Without Response|
+|Server2Client| 00000007-5026-444A-9E0E-D6F2450F3A77| Notify|
+|Ident| 00000008-5026-444A-9E0E-D6F2450F3A77| Read|
+
+ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
+
+Each service characteristic that has the Notify property MUST contain the Client Characteristic Configuration Descriptor, with UUID ‘0x29 0x02’ and default value of ‘0x00 0x00’. This value MUST be set to ‘0x00 0x01’ by the GATT client to get notified for the characteristic associated to this descriptor.
+
+ToDo: make less ISOy.
+
+## Connection State Values {#connection-state-values}
+
+After the connection is setup the GATT client subscribes to notifications of characteristic ‘State’ and ‘Server2Client’. For performance reasons, the GATT client should request for an as high an MTU as possible. After these steps, the GATT client makes a write without response request to ‘State’ where it sets the value to 0x01. This tells the GATT server that the GATT client is ready for the transmission to start. 
+
+The connection state is indicated by the ‘State’ characteristic. It is encoded as 1-byte binary data. Table 13 describes the different connection state values, which are communicated using write without response and notify. 
+
+|Command| Data| Sender |Description |
+|Start | 0x01 | GATT client | This indicates that the Verifier may/will begin transmission. |
+|End | 0x02 | Wallet, Verifier | Signal to finish/terminate transaction. The Verifier MUST use this value to signal the end of data retrieval. Both the Wallet and the Verifier can use this value at any time to terminate the connection. See (#session-termination) for more information on session termination.|
+
+## OpenID4VP Request and Response over BLE
+
+OpenID4VP Request starts when GATT Client (Wallet) signals `Start` value to the `State` charateristic.
+
+When the GATT server (Verifier) wants to send a message to the GATT client (Wallet), it divides the message in parts with a length of 3 bytes less than the MTU size. It then sends these parts to the GATT client using the notify command via the ‘Server2Client’ characteristic. The first byte of each part is either 0x01, which indicates more parts are coming, or 0x00, to indicate it is the last part of the message. 
+
+When the GATT client (Wallet) wants to send a message to the GATT server (Verifier), it divides the message in parts with a length of 3 bytes less than the MTU size. It then sends these parts to the GATT server using the write without response command via the ‘Client2Server’ characteristic. The first byte of each part is either 0x01, which indicates more messages are coming, or 0x00, to indicate it is the last part of the message. 
+
+The sequence of messages MUST be repeated as long as necessary to finish sending Authorization Request and Response.
+
+```plantuml
+participant "GATT server (Verifier)" as V
+participant "GATT client (Wallet)" as W
+autoactivate off
+hide footbox
+
+Note over V: GATT Verifier (Verifier) sends a message
+group loop
+V ->W: write without response to Server2Client characteristic\nwith partial message data (prepend 0x01).
+end
+V->W: notify from Server2Client characteristic\nwith partial message data (prepend 0x00).
+
+Note over W: GATT client (Wallet) sends a message
+group loop
+W -> V:write without response to Client2Server characteristic\nwith partial message data (prepend 0x01).
+end
+W->V: notify from Client2Server characteristic\nwith partial message data (prepend 0x00).
+```
+
+## Connection closure 
+
+After data retrieval, the GATT client unsubscribes from both the ‘State’ and ‘Server2Client’ characteristics. 
+
+## Connection re-establishment 
+
+In case of a lost connection before the ‘state’ characteristic has been set to a value of 0x01 (e.g. the transmission has not yet started), the Wallet and Verifier should terminate their current BLE session and try to reconnect according to (#setup-request). In case of a lost connection after the 'state' characteristic has been set to value 0x01 (e.g. the transmission of data has started), a connection MUST NOT be re-established and a completely new Wallet transaction MUST be initiated if required.
+
+## Session Termination {#session-termination}
+
+The session MUST be terminated if at least one of the following conditions occur: 
+* After a time-out of no activity occurs. 
+* If the Wallet does not want to receive any further requests. 
+* If the Verifier does not want to send any further requests. 
+
+A Wallet or Verifier has two options to send the termination message: 
+* To send the status code for session termination. 
+* To send the "End" command defined in (#connection-state-values)
+
+If the intent to terminate the session is received, the Wallet and Verifier MUST perform at least the following actions: 
+* Destruction of session keys and related ephemeral key material 
+* Closure of the communication channel used for data retrieval.
+
+ToDo: Clean-up the language so that less ISOy.
+
+# Requests
+
+## Connection Setup Request {#setup-request}
 
 The Wallet MUST display to the Verifier a QR code the contains base64url-encoded Connection Setup Request with the following parameters:
 
@@ -141,93 +249,13 @@ Connection Setup Request MUST be base64url-encoded without padding as defined in
 
 ToDo: check what ", as path" means.
 
-### UUID for Service Definition {#service-definition}
-
-The Verifier service MUST contain the following characteristics, since the Verifier acts as the GATT server. The service MAY contain other properties.
-
-|Characteristic	name | UUID | Mandatory	properties |
-| ---|---|---|
-|State| 00000005-5026-444A-9E0E-D6F2450F3A77 | Notify |
-|Client2Server| 00000006-5026-444A-9E0E-D6F2450F3A77 | Write Without Response|
-|Server2Client| 00000007-5026-444A-9E0E-D6F2450F3A77| Notify|
-|Ident| 00000008-5026-444A-9E0E-D6F2450F3A77| Read|
-
-ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
-
-Each service characteristic that has the Notify property MUST contain the Client Characteristic Configuration Descriptor, with UUID ‘0x29 0x02’ and default value of ‘0x00 0x00’. This value MUST be set to ‘0x00 0x01’ by the GATT client to get notified for the characteristic associated to this descriptor.
-
-ToDo: make less ISOy.
-
-### Connection State Values {#connection-state-values}
-
-After the connection is setup the GATT client subscribes to notifications of characteristic ‘State’ and ‘Server2Client’. For performance reasons, the GATT client should request for an as high an MTU as possible. After these steps, the GATT client makes a write without response request to ‘State’ where it sets the value to 0x01. This tells the GATT server that the GATT client is ready for the transmission to start. 
-
-The connection state is indicated by the ‘State’ characteristic. It is encoded as 1-byte binary data. Table 13 describes the different connection state values, which are communicated using write without response and notify. 
-
-|Command| Data| Sender |Description |
-|Start | 0x01 | GATT client | This indicates that the Verifier may/will begin transmission. |
-|End | 0x02 | Wallet, Verifier | Signal to finish/terminate transaction. The Verifier MUST use this value to signal the end of data retrieval. Both the Wallet and the Verifier can use this value at any time to terminate the connection. See (#session-termination) for more information on session termination.|
-
-
-# OpenID4VP 
-
 ## OpenID4VP Request
 
-OpenID4VP Request starts when GATT Client (Wallet) signals `Start` value to the `State` charateristic.
+### Request Parameter Extension
 
 This document extends [@!OpenID4VP] specification with the following parameters:
 
 `ephemeral_Verifier_pub_key`: REQUIRED. A JSON object that is an ephemeral public key generated by the Verifier for session encryption. The key is a bare key in JWK [@!RFC7517] format (not an X.509 certificate value).
-
-When the GATT server (Verifier) wants to send a message to the GATT client (Wallet), it divides the message in parts with a length of 3 bytes less than the MTU size. It then sends these parts to the GATT client using the notify command via the ‘Server2Client’ characteristic. The first byte of each part is either 0x01, which indicates more parts are coming, or 0x00, to indicate it is the last part of the message. 
-
-When the GATT client (Wallet) wants to send a message to the GATT server (Verifier), it divides the message in parts with a length of 3 bytes less than the MTU size. It then sends these parts to the GATT server using the write without response command via the ‘Client2Server’ characteristic. The first byte of each part is either 0x01, which indicates more messages are coming, or 0x00, to indicate it is the last part of the message. 
-
-The sequence of messages shall be repeated as long as necessary to finish sending Authorization Request and Response.
-
-```plantuml
-
-participant "GATT server (Verifier)" as V
-participant "GATT client (Wallet)" as W
-autoactivate off
-hide footbox
-
-Note over V: GATT Verifier (Verifier) sends a message
-group loop
-V ->W: write without response to Server2Client characteristic\nwith partial message data (prepend 0x01).
-end
-V->W: notify from Server2Client characteristic\nwith partial message data (prepend 0x00).
-
-Note over W: GATT client (Wallet) sends a message
-group loop
-W -> V:write without response to Client2Server characteristic\nwith partial message data (prepend 0x01).
-end
-W->V: notify from Client2Server characteristic\nwith partial message data (prepend 0x00).
-
-```
-
-The UUID’s used MUST be 16-byte UUID’s that are unique for the transaction. The Peripheral device MUST broadcast the service with the UUID as received during device engagement in the advertising packet. The Central device is then able to scan for the UUID and connect to the advertised service. However, the Central device may use a different mechanisms to identify the Peripheral device.
-
-NOTE 1 BLE stacks in mobile devices can use scan filter and caching methods to manage congested environments and manage scan intervals for device energy consumption control. This can influence the connection time required when using UUIDs for the identification of the Peripheral device. 
-
-NOTE 2 Finding the correct device to connect to is purely a practical problem. Connecting to the wrong Verifier does not have security implications, since due to the security methods described in Clause 9, the Wallet and Verifier will not setup a session with the wrong Verifier. Note however, that these mechanisms do not provide complete protection against a bad actor aiming to cause a denial of service attack by advertising as a fake Verifier
-
-# Session Termination {#session-termination}
-
-The session MUST be terminated if at least one of the following conditions occur: 
-* After a time-out of no activity occurs. 
-* If the Wallet does not want to receive any further requests. 
-* If the Verifier does not want to send any further requests. 
-
-A Wallet or Verifier has two options to send the termination message: 
-* To send the status code for session termination. 
-* To send the "End" command defined in (#connection-state-values)
-
-If the intent to terminate the session is received, the Wallet and Verifier MUST perform at least the following actions: 
-* Destruction of session keys and related ephemeral key material 
-* Closure of the communication channel used for data retrieval.
-
-ToDo: Clean-up the language so that less ISOy.
 
 # Encryption
 
