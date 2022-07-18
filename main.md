@@ -1,7 +1,105 @@
-# OpenID for Verifiable Presentations over BLE
+%%%
+title = "OpenID for Verifiable Presentations over BLE"
+abbrev = "opendi4vp-offline"
+ipr = "none"
+workgroup = "OpenID Connect"
+keyword = ["security", "openid", "ssi"]
+
+[seriesInfo]
+name = "Internet-Draft"
+value = "openid-for-verifiable-presentations-offline-1_0-01"
+status = "standard"
+
+[[author]]
+initials="K."
+surname="Yasuda"
+fullname="Kristina Yasuda"
+organization="Microsoft"
+    [author.address]
+    email = "kristina.yasuda@microsoft.com"
+%%%
+
+.# Abstract
+
+This document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credential. It uses request and response syntax defined in [@!OpenID4VP] specification.
+
+{mainmatter}
+
+# Introduction
+
+This document enables Wallets and the Verifiers who have implemented [@!OpnID4VP] to be able to request and receive verifiable presentations even when one or both of the entities do not have Internet connection.
+
+The document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credential.It uses request and response syntax defined in [@!OpenID4VP] specification.
+
+# Terms and Definitions
+
+verifiable credential
+wallet
+the verifier
+
+//WIP
+
+# Use Cases
+
+## Use Case when only wallet is offline
+
+## Use Case when only the verifier is offline
+
+## Use Case when both wallet and the verifier are offline
+
+# Scope
+
+//WIP
+
+# Overview
+
+Wallet and the Verifier MUST implement BLE according to the [Bluetooth Core Specification 4.0](https://www.bluetooth.com/specifications/specs/core-specification-4-0/). 
+
+Wallet and the Verifier MUST support LE Data Packet Length Extension.
+
+ToDo: For the wallet, mDL mandates 4.0, and recommends 4.2. and LE data Pathet Length Extension. For the reader, 4.2 and LE Data Packet Length Extension is mandated and 5.0 and LE 2M PHY is recommended.
+
+The protocol consists of the following two steps:
+
+1. Establishing a connection
+2. Exchanging verifiable credentials
+
+During step 1, ephemeral keys to encrypt the session are exchanged. 
+
+Step 2 utilizes request and response syntax defined in [@!OpenID4VP] specification.
+
+# Protocol Flow
+
+~~~ ascii-art
++----------+                                         +----------------+
+|          |                                         |                |
+|          |<---- (1) Connection setup request ------|                |
+|          |     (Ephemeral Key)                     |                |
+|          |                                         |                |
+|          |----- (2) OpenID4VP Request over BLE --->|                |
+|          |                                         |                |
+|          |       +----------+                      |                |
+|          |       |          |                      |                |
+|          |       | End-User |                      |                |
+| Verifier |       |          |<--(2) AuthN & AuthZ->|     Wallet     |
+|          |       |          |                      |                |
+|          |       +----------+                      |                |
+|          |                                         |                |
+|          |<---- (3) OpenID4VP Response over BLE ---|                |
+|          |      (verifiable presentation)          |                |
+|          |                                         |                |
++----------+                                         +----------------+
+~~~
+Figure: OpenID4VP over BLE Protocol Flow
 
 
-For device retrieval    using BLE,   the    mDL reader shall    support the mdoc central    client mode and mdoc peripheral server mode,    as  defined in  cluase  8.3.3.1.1. 
+## Connection Setup
+
+
+Wallet and the Verifier MUST support the Central role. The Wallet MUST act as GATT client. 
+
+ToDo: name this as central client mode..?
+
 For the BLE device retrieval    transmission    technology, the contents    of  the Alternative Carrier Record and Carrier  Configuration   Record(s) shall comply  with    Clause 8.3.3.1.1.2. 
 
 
@@ -32,3 +130,15 @@ If the Ident characteristic received from the mdoc reader does not match the exp
 NOTE 3 The purpose of the Ident characteristic is only to verify whether the mdoc is connected to the correct mdoc reader before setting starting data retrieval. If the mdoc is connected to the wrong mdoc reader, session establishment will fail. Connecting and disconnecting to an mdoc reader takes a relatively large amount of time and it is therefore fastest to implement methods to identify the correct mdoc reader to connect to and not to rely purely on the Ident characteristic to identify the correct mdoc reader. 
 
 After connection is setup, the GATT client may check to see if the GATT server supports the L2CAP transmission profile and, if so, use it to transfer data. See Annex A for more information. If the L2CAP transmission profile is used, Clause 8.3.3.1.1.5, Clause 8.3.3.1.1.6, Clause 8.3.3.1.1.7 and Clause 8.3.3.1.1.8 do not apply
+
+
+## Security Considerations
+
+## Session Information
+
+Both wallet and the Verifier MUST remove all the information about the session after its termination.
+
+## Discussion points
+ 
+- not requiring nor recommending BLE secure connections.
+- no support for the Peropheral role.
