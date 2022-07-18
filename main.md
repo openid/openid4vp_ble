@@ -162,24 +162,7 @@ When the GATT client (Wallet) wants to send a message to the GATT server (Verifi
 
 The sequence of messages MUST be repeated as long as necessary to finish sending Authorization Request and Response.
 
-```plantuml
-participant "GATT server (Verifier)" as V
-participant "GATT client (Wallet)" as W
-autoactivate off
-hide footbox
 
-Note over V: GATT Verifier (Verifier) sends a message
-group loop
-V ->W: write without response to Server2Client characteristic\nwith partial message data (prepend 0x01).
-end
-V->W: notify from Server2Client characteristic\nwith partial message data (prepend 0x00).
-
-Note over W: GATT client (Wallet) sends a message
-group loop
-W -> V:write without response to Client2Server characteristic\nwith partial message data (prepend 0x01).
-end
-W->V: notify from Client2Server characteristic\nwith partial message data (prepend 0x00).
-```
 
 ## Connection closure 
 
