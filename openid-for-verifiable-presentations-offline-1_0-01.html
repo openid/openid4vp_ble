@@ -1399,9 +1399,31 @@ the Verifier<a href="#section-2-1" class="pilcrow">¶</a></p>
         </h3>
 <p id="section-7.2-1">After the connection is setup the GATT client subscribes to notifications of characteristic 'State' and 'Server2Client'. For performance reasons, the GATT client should request for an as high an MTU as possible. After these steps, the GATT client makes a write without response request to 'State' where it sets the value to 0x01. This tells the GATT server that the GATT client is ready for the transmission to start.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
 <p id="section-7.2-2">The connection state is indicated by the 'State' characteristic. It is encoded as 1-byte binary data. Table 13 describes the different connection state values, which are communicated using write without response and notify.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
-<p id="section-7.2-3">|Command| Data| Sender |Description |
-|Start | 0x01 | GATT client | This indicates that the Verifier may/will begin transmission. |
-|End | 0x02 | Wallet, Verifier | Signal to finish/terminate transaction. The Verifier MUST use this value to signal the end of data retrieval. Both the Wallet and the Verifier can use this value at any time to terminate the connection. See <a href="#session-termination" class="xref">Section 7.6</a> for more information on session termination.|<a href="#section-7.2-3" class="pilcrow">¶</a></p>
+<table class="center" id="table-2">
+          <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Command</th>
+              <th class="text-left" rowspan="1" colspan="1">Data</th>
+              <th class="text-left" rowspan="1" colspan="1">Sender</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Start</td>
+              <td class="text-left" rowspan="1" colspan="1">0x01</td>
+              <td class="text-left" rowspan="1" colspan="1">GATT client</td>
+              <td class="text-left" rowspan="1" colspan="1">This indicates that the Verifier may/will begin transmission.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">End</td>
+              <td class="text-left" rowspan="1" colspan="1">0x02</td>
+              <td class="text-left" rowspan="1" colspan="1">Wallet, Verifier</td>
+              <td class="text-left" rowspan="1" colspan="1">Signal to finish/terminate transaction. The Verifier MUST use this value to signal the end of data retrieval. Both the Wallet and the Verifier can use this value at any time to terminate the connection. See <a href="#session-termination" class="xref">Section 7.6</a> for more information on session termination.</td>
+            </tr>
+          </tbody>
+        </table>
 </section>
 </div>
 <div id="openid4vp-request-and-response-over-ble">

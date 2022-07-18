@@ -149,6 +149,7 @@ After the connection is setup the GATT client subscribes to notifications of cha
 The connection state is indicated by the ‘State’ characteristic. It is encoded as 1-byte binary data. Table 13 describes the different connection state values, which are communicated using write without response and notify. 
 
 |Command| Data| Sender |Description |
+|---|---|---|---|
 |Start | 0x01 | GATT client | This indicates that the Verifier may/will begin transmission. |
 |End | 0x02 | Wallet, Verifier | Signal to finish/terminate transaction. The Verifier MUST use this value to signal the end of data retrieval. Both the Wallet and the Verifier can use this value at any time to terminate the connection. See (#session-termination) for more information on session termination.|
 

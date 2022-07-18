@@ -150,10 +150,32 @@ the Verifier</t>
 <section anchor="connection-state-values"><name>Connection State Values</name>
 <t>After the connection is setup the GATT client subscribes to notifications of characteristic ‘State’ and ‘Server2Client’. For performance reasons, the GATT client should request for an as high an MTU as possible. After these steps, the GATT client makes a write without response request to ‘State’ where it sets the value to 0x01. This tells the GATT server that the GATT client is ready for the transmission to start.</t>
 <t>The connection state is indicated by the ‘State’ characteristic. It is encoded as 1-byte binary data. Table 13 describes the different connection state values, which are communicated using write without response and notify.</t>
-<t>|Command| Data| Sender |Description |
-|Start | 0x01 | GATT client | This indicates that the Verifier may/will begin transmission. |
-|End | 0x02 | Wallet, Verifier | Signal to finish/terminate transaction. The Verifier MUST use this value to signal the end of data retrieval. Both the Wallet and the Verifier can use this value at any time to terminate the connection. See <xref target="session-termination"></xref> for more information on session termination.|</t>
-</section>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Data</th>
+<th>Sender</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Start</td>
+<td>0x01</td>
+<td>GATT client</td>
+<td>This indicates that the Verifier may/will begin transmission.</td>
+</tr>
+
+<tr>
+<td>End</td>
+<td>0x02</td>
+<td>Wallet, Verifier</td>
+<td>Signal to finish/terminate transaction. The Verifier MUST use this value to signal the end of data retrieval. Both the Wallet and the Verifier can use this value at any time to terminate the connection. See <xref target="session-termination"></xref> for more information on session termination.</td>
+</tr>
+</tbody>
+</table></section>
 
 <section anchor="openid4vp-request-and-response-over-ble"><name>OpenID4VP Request and Response over BLE</name>
 <t>OpenID4VP Request starts when GATT Client (Wallet) signals <tt>Start</tt> value to the <tt>State</tt> charateristic.</t>
