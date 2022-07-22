@@ -344,6 +344,10 @@ NOTE The purpose of the Ident characteristic is only to verify whether the Walle
 
 ToDo: Fix the language to be less ISOy.
 
+# Security Considerations
+
+How to secure what happens before what is defined in this protocol.
+
 # Discussion points
  
 - not requiring nor recommending BLE secure connections.
