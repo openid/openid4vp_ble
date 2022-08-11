@@ -250,6 +250,22 @@ Connection Setup Request MUST be base64url-encoded without padding as defined in
 
 ToDo: check what ", as path" means.
 
+## Checking if Connected to a Correct Entity (ISO copy paste currently)
+
+To ensure that the Wallet is connected to the correct Client, the Wallet may verify the Ident characteristic as described in (#service-definition). The Ident characteristic value shall be calculated using the following procedure:
+
+Use HKDF as defined in RFC 5869 with the following parameters:
+
+— Hash: SHA-256,
+— IKM: EdeviceKeyBytes (see 9.1.1.4),
+— salt: (no salt value is provided),
+— info:”BLEIdent” (encoded as a UTF-8 string),
+— L: 16 octets.
+
+If the Ident characteristic received from the Client does not match the expected value, the Wallet shall terminate the connection.
+
+NOTE 3 The purpose of the Ident characteristic is only to verify whether the Wallet is connected to the correct Client before setting starting data retrieval. If the Wallet is connected to the wrong Client, session establishment will fail. Connecting and disconnecting to an Client takes a relatively large amount of time and it is therefore fastest to implement methods to identify the correct Client to connect to and not to rely purely on the Ident characteristic to identify the correct Client.
+
 ## OpenID4VP Request
 
 ### Request Parameter Extension
