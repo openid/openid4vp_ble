@@ -202,6 +202,8 @@ Verifier Service - UUID 00000001-5026-444A-9E0E-D6F2450F3A77
 |Submit VC           | 00000007-5026-444A-9E0E-D6F2450F3A77 | Write                 | Submit the VC       |
 +--------------------+--------------------------------------+-----------------------+---------------------+
 
+ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.
+
 ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
 
 ## Connection closure 
@@ -259,7 +261,9 @@ The Wallet MUST derive session key using HKDF as defined in [RFC5869] with the f
 * info: “SKWallet” (encoded as ASCII string) 
 * L: 32 octets 
 
-For encryption AES-256-GCM (GCM: Galois Counter Mode) as defined in NIST SP 800-38D MUST be used. 
+For encryption AES-256-GCM (192) /ChaCha20 (GCM: Galois Counter Mode) as defined in NIST SP 800-38D MUST be used. 
+
+ToDo: Can we do ChaCha20? Rather than AES 256 GCM? The fact that ChaCha20 is more streaming.
 
 The IV (Initialization Vector defined in NIST SP 800-38D) used for encryption MUST have the default length of 12 bytes for GCM, as specified in NIST SP 800-38D. The IV MUST be the concatenation of the identifier and the message counter (identifier || message counter). The identifier MUST be an 8-byte value. 
 
@@ -267,28 +271,6 @@ The Verifier MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x
 The Wallet MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x01.
 
 The Wallet and Verifier MUST keep a separate message counter for each session key. The message counter value MUST be a 4-byte big-endian unsigned integer. For the first encryption with a session key, the message counter MUST be set to 1. Before each following encryption with the same key, the message counter value MUST be increased by 1. A message counter value MUST never be reused in any future encryption using the same key. The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input for the GCM function MUST be an empty string. The plaintext used as input for the GCM function MUST be Wallet request or Wallet response. The value of the data element in the session establishment and session data messages as defined in 9.1.1.4 MUST be the concatenation of the ciphertext and all 16 bytes of the authentication tag (ciphertext || authentication tag).
-
-ToDo: Clean-up the language so that less ISOy.
-
-## OpenID4VP Request Encryption
-
-To encrypt OpenID4VP Response, [RFC9191](https://datatracker.ietf.org/doc/html/rfc9101) MUST be used. JAR defines how Authorization Request parameters cab be conveyed as a JWT, which can be encrypted as a whole.
-
-## OpenID4VP Response Encryption
-
-To encrypt OpenID4VP Response, [JARM](https://openid.net//specs/openid-financial-api-jarm-wd-01.html) MUST be used. JARM defines how Authorization Response parameters cab be conveyed in a JWT, which can be encrypted as a whole.
-
-For the response_type "vp_token" the JWT contains the response parameters as defined in [OpenID4VP]:
-
-* `vp_token` - the VP token
-* `presentation_submission` - contains information where to find a requested verifiable credential.
-
-The following example shows the claims of the JWT for a successful `vp_token` Authorization Response:
-
-{
-   "vp_token":"<base64url-encoded VP Token>",
-   "presentation_submission":"<base64url-encoded `presentation_submission`>"
-}
 
 # Security Considerations
 
