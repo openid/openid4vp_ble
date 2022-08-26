@@ -101,8 +101,6 @@ The protocol consists of the following two steps:
 
 During step 1, ephemeral keys to encrypt the session are exchanged. 
 
-
-
 Step 2 utilizes request and response syntax defined in [OpenID4VP] specification. Response type `vp_token` MUST be used to obtain the VP Token in Authorization Response.
 
 # Protocol Flow Overview
@@ -138,7 +136,11 @@ Figure: OpenID4VP over BLE Protocol Flow
 (4) Wallet sends Presentation Response to the Verifier with Verifiable Presntation(s).
 (5) Verifier and the Wallet close connection.
 
-## Estabilishing Connection using BLE Advertisement
+# Connection Set up
+
+First, Verifier and the Wallet need to establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.
+
+## Estabilishing Connection using BLE Advertisement {#connection-ble}
 
 This section describes how Verifier and the Wallet can establish connection by Verifier initiating BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.
 
@@ -169,13 +171,14 @@ Verifier advertises half of the public key in the original BLE Advertisement Pac
 
 BLE Advertisement -  OPENID4VP, first 16 byte of ED25519 public key (max available size 29 byte), Response to the scan we will send the remaining 16 byte of ED25519, 
 
-+-----------+                       +-----------+
-|           |-----PDU ADV_IND------>|           |
-|  Adv      |<----SCAN_REQ----------| Scanner   |
-| (Verifier)|-----SCAN_RESP-------->| (Wallet)  |
-+-----------+                       +-----------+
++------------+                       +-----------+
+|            |-----PDU ADV_IND------>|           |
+| Advertiser |<----SCAN_REQ----------| Scanner   |
+| (Verifier) |-----SCAN_RESP-------->| (Wallet)  |
+|            |                       |           |
++------------+                       +-----------+
 
-Note that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.
+ToDo: Need to explain this diagram better.
 
 ## Estabilishing Connection using QR Code
 
@@ -187,7 +190,15 @@ This section describes how Verifier and the Wallet can establish connection by V
 (4) Wallet connects to the Verifier.
 (5) Wallet negotiates Security and sends details.
 
-# Connection Flow
+QR code MUST contain the same structure as defined in (#connection-ble), except that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.
+
+How the Connection Setup Request reaches a Wallet of a user's choice that capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). The most certain way for a QR code to reach a target Wallet is to use a camera fature in a Wallet Application itself to scan a QR code.
+
+# Data Exchange Flow
+
+This section describes how the Wallet obtains Presentation Request from the Verifier, and how the Wallet sends Presentation Response to the Verifier after authenticating the user and obtaining consent to share Credential(s) with the Verifier.
+
+ToDo: Assume we want to support both sending only VC and VC in a VP?
 
 Wallet MUST support the Central role and is responsible to connect to the Verifier. The Verifier MUST support the Peripheral Role and should advertise its details. After the connection is established, the Wallet has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.
 
