@@ -136,7 +136,7 @@ Figure: OpenID4VP over BLE Protocol Flow
 (4) Wallet sends Presentation Response to the Verifier with Verifiable Presntation(s).
 (5) Verifier and the Wallet close connection.
 
-# Connection Set up
+# Connection Set up {#connection-set-up}
 
 First, Verifier and the Wallet need to establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.
 
@@ -276,14 +276,16 @@ In case of a termination, the Wallet and Verifier MUST perform at least the foll
 
 ## Overview
 
-1. The Wallet generates an ephemeral key pair and in the Connection Setup Request sends to the Verifier the ephemeral public key and the identifier of the algorithm.
-2. The Verifier generates an ephemeral key pair using the algorithm received in the Connection Setup Request. 
-3. The Verifier derives a session key using the Wallet's public key received in the Connection Setup Request, and encrypts OpenID4VP Request using it.
-4. The Verifier sends an encrypted OpenID4VP Request to the Verifier that contains Verifier's ephemeral public key.
-5. The Wallet derives a session key using the Verifier's public key received in the OpenID4VP Request, and encrypts OpenID4VP Response using it.
-6. The Verifier decrypts OpenID4VP Response using the session key computed in step 3.
+1. The Wallet obtains Verifier's ephemeral key pair in the Connection Setup Request from BLE Advertisement or a QR Code.
+2. The Wallet generates an ephemeral key pair. 
+3. The Wallet communicates its ephemeral key pair to the Verifier in the Identity Request.
+4. The Verifier derives an encryption key using the Wallet's public key received in the Idenity Request, and encrypts Presentation Request using it.
+5. The Wallet derives an encryption key using the Verifier's public key received in the Connection Set Up phase, decrypts Presentation Request and encrypts Presentation Response using it.
+6. The Verifier decrypts Presentation Response using the encryption key computed in step 4.
 
-Note that Connection Setup Request itself MUST NOT be encrypted.
+Note that Connection Setup Request itself defined in (#connection-set-up) MUST NOT be encrypted.
+
+ToDo: no algorithm identifier since looks like we are doing only X25519?
 
 ## Session Key Computation
 
@@ -316,6 +318,8 @@ The Wallet MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 
 The Wallet and Verifier MUST keep a separate message counter for each session key. The message counter value MUST be a 4-byte big-endian unsigned integer. For the first encryption with a session key, the message counter MUST be set to 1. Before each following encryption with the same key, the message counter value MUST be increased by 1. A message counter value MUST never be reused in any future encryption using the same key. The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input for the GCM function MUST be an empty string. The plaintext used as input for the GCM function MUST be Wallet request or Wallet response. The value of the data element in the session establishment and session data messages as defined in 9.1.1.4 MUST be the concatenation of the ciphertext and all 16 bytes of the authentication tag (ciphertext || authentication tag).
 
+ToDo: Need to pharaphrase, currently text borrowed from ISO.
+
 # Security Considerations
 
 ## Session Information
@@ -336,7 +340,7 @@ If the Ident characteristic received from the Verifier does not match the expect
 
 NOTE The purpose of the Ident characteristic is only to verify whether the Wallet is connected to the correct Verifier before setting starting OpenID4VP Request. If the Wallet is connected to the wrong Verifier, session establishment will fail. Connecting and disconnecting to an Verifier takes a relatively large amount of time and it is therefore fastest to implement methods to identify the correct Verifier to connect to and not to rely purely on the Ident characteristic to identify the correct Verifier. 
 
-ToDo: Fix the language to be less ISOy.
+ToDo: Need to pharaphrase, currently text borrowed from ISO.
 
 ## Verifier Authentication
 

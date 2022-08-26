@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- name="GENERATOR" content="github.com/mmarkdown/mmark Mmark Markdown Processor - mmark.miek.nl" -->
+<rfc version="3" ipr="none" docName="openid-for-verifiable-presentations-offline-1_0-01" submissionType="IETF" category="std" xml:lang="en" xmlns:xi="http://www.w3.org/2001/XInclude" consensus="true">
+
+<front>
+<title abbrev="opendi4vp-offline">OpenID for Verifiable Presentations over BLE</title><seriesInfo value="openid-for-verifiable-presentations-offline-1_0-01" status="standard" name="Internet-Draft"></seriesInfo>
+<author initials="K." surname="Yasuda" fullname="Kristina Yasuda"><organization>Microsoft</organization><address><postal><street></street>
+</postal><email>kristina.yasuda@microsoft.com</email>
+</address></author>
+<author initials="T." surname="Lodderstedt" fullname="Torsten Lodderstedt"><organization>yes.com</organization><address><postal><street></street>
+</postal><email>torsten@lodderstedt.net</email>
+</address></author>
+<author initials="K." surname="Nakamura" fullname="Kenichi Nakamura"><organization>Panasonic</organization><address><postal><street></street>
+</postal><email>nakamura.kenken@jp.panasonic.com</email>
+</address></author>
+<author initials="G." fullname="Sasikumar"><organization>MOSIP</organization><address><postal><street></street>
+</postal><email>sasi@mosip.io</email>
+</address></author>
+<author initials="N." fullname="Ramesh"><organization>MOSIP</organization><address><postal><street></street>
+</postal><email>ramesh@mosip.io</email>
+</address></author>
+<date/>
+<area>Internet</area>
+<workgroup>OpenID Connect</workgroup>
+<keyword>security</keyword>
+<keyword>openid</keyword>
+<keyword>ssi</keyword>
+
+<abstract>
+<t>This document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credential. It uses request and response syntax defined in [OpenID4VP] specification.</t>
+</abstract>
+
+</front>
+
+<middle>
+
+<section anchor="introduction"><name>Introduction</name>
+<t>This document enables Wallets and the Verifiers who have implemented [OpenID4VP] to be able to request and receive verifiable presentations even when one or both of the entities do not have Internet connection.</t>
+<t>The document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credential.It uses request and response syntax defined in [OpenID4VP] specification.</t>
+</section>
+
+<section anchor="terms-and-definitions"><name>Terms and Definitions</name>
+<t>verifiable credential
+wallet
+the Verifier</t>
+<t>//WIP</t>
+<t>ToDo: &quot;Connection&quot; or &quot;Session&quot;?</t>
+</section>
+
+<section anchor="use-cases"><name>Use Cases</name>
+
+<section anchor="use-case-when-only-wallet-is-offline"><name>Use Case when only wallet is offline</name>
+</section>
+
+<section anchor="use-case-when-only-the-verifier-is-offline"><name>Use Case when only the Verifier is offline</name>
+</section>
+
+<section anchor="use-case-when-both-wallet-and-the-verifier-are-offline"><name>Use Case when both wallet and the Verifier are offline</name>
+</section>
+</section>
+
+<section anchor="scope"><name>Scope</name>
+<t>//WIP</t>
+</section>
+
+<section anchor="overview"><name>Overview</name>
+<t>Wallet and the Verifier MUST implement BLE according to the <eref target="https://www.bluetooth.com/specifications/specs/core-specification-4-0/">Bluetooth Core Specification 4.0</eref>.</t>
+<t>Wallet and the Verifier MUST support LE Data Packet Length Extension.</t>
+<t>ToDo: For the wallet, mDL mandates 4.0, and recommends 4.2. and LE data Pathet Length Extension. For the reader, 4.2 and LE Data Packet Length Extension is mandated and 5.0 and LE 2M PHY is recommended.</t>
+<t>The protocol consists of the following two steps:</t>
+
+<ol>
+<li><t>Establishing a connection</t>
+</li>
+<li><t>Verifying the parties</t>
+</li>
+<li><t>Exchanging verifiable credentials</t>
+</li>
+<li><t>Finalizing the exchange</t>
+</li>
+</ol>
+<t>During step 1, ephemeral keys to encrypt the session are exchanged.</t>
+<t>Step 2 utilizes request and response syntax defined in [OpenID4VP] specification. Response type <tt>vp_token</tt> MUST be used to obtain the VP Token in Authorization Response.</t>
+</section>
+
+<section anchor="protocol-flow-overview"><name>Protocol Flow Overview</name>
+<t>Below is the diagram that illustrates protocol flow:</t>
+<figure><name>OpenID4VP over BLE Protocol Flow
+</name>
+<sourcecode type="ascii-art">+-------------+                                         +----------------+
+|             |                                         |                |
+|             |&lt;---- (1) Connection setup request ------|                |
+|             |          using QR code or discovery     |                |
+|             |                                         |                |
+|             |----- (2) OpenID4VP Request over BLE ---&gt;|                |
+|             |          verify the requester           |                |
+|             |       +----------+                      |                |
+|             |       |          |                      |                |
+|             |       | End-User |                      |                |
+| Verifier    |       |          |&lt;- (3) AuthN &amp; AuthZ-&gt;|     Wallet     |
+| (Peripheral |       |          |                      | (Central GAP   |
+|  GAP Role,  |       +----------+                      |  Role,         |
+|  Server)    |                                         |  Client)       |
+|             |&lt;---- (4) OpenID4VP Response over BLE ---|                |
+|             |      (verifiable presentation)          |                |
+|             |                                         |                |
+|             |----- (5) Finalize the exchange --------&gt;|                |
++-------------+          &amp; Close connection             +----------------+
+</sourcecode>
+</figure>
+<t>(1) Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.
+(2) Wallet obtains Presentation Request from the Verifier.
+(3) Wallet authenticates the user and obtains consent to share Credential(s) with the Verifier.
+(4) Wallet sends Presentation Response to the Verifier with Verifiable Presntation(s).
+(5) Verifier and the Wallet close connection.</t>
+</section>
+
+<section anchor="connection-set-up"><name>Connection Set up</name>
+<t>First, Verifier and the Wallet need to establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.</t>
+
+<section anchor="connection-ble"><name>Estabilishing Connection using BLE Advertisement</name>
+<t>This section describes how Verifier and the Wallet can establish connection by Verifier initiating BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.</t>
+<t>(1) Verifier opens it's native application
+(2) Verifiers starts the mode that accepts OpenID4VP.
+(3) Verifier app starts BLE advertisement.
+(4) Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one)
+(5) Wallet connects to the Verifier.
+(6) Wallet negotiates Security and sends details.</t>
+<t>BLE Advertisement Packet structure MUST be the following:</t>
+
+<artwork>PDU:
+    Header:
+        PDU type: ADV_IND
+        Tx Address: Random
+        Rx Address: Random
+    Payload: (37 bytes)
+        Adv Address: Random address
+        Adv Data: (32 byte)
+            Adv Type: Complete Local Name
+            flag: &quot;LE General Discoverable Mode&quot;, &quot;BR/EDR Not Supported&quot;
+            Data: OPENID4VP_8520f0098930a754748b7ddcb43ef75a (5 bytes + 16 bytes ) Half of the random X25519 public key
+</artwork>
+<t>Verifier advertises half of the public key in the original BLE Advertisement Packet. The remainng half of the key (0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.</t>
+<t>BLE Advertisement -  OPENID4VP, first 16 byte of ED25519 public key (max available size 29 byte), Response to the scan we will send the remaining 16 byte of ED25519,</t>
+<t>+------------+                       +-----------+
+|            |-----PDU ADV<em>IND------&gt;|           |
+| Advertiser |&lt;----SCAN</em>REQ----------| Scanner   |
+| (Verifier) |-----SCAN_RESP--------&gt;| (Wallet)  |
+|            |                       |           |
++------------+                       +-----------+</t>
+<t>ToDo: Need to explain this diagram better.</t>
+</section>
+
+<section anchor="estabilishing-connection-using-qr-code"><name>Estabilishing Connection using QR Code</name>
+<t>This section describes how Verifier and the Wallet can establish connection by Verifier displaying a QR Code scanned using the Wallet.</t>
+<t>(1) Verifier opens it's native application
+(2) Verifiers displays a QR Code
+(3) Wallet scans the QR Code.
+(4) Wallet connects to the Verifier.
+(5) Wallet negotiates Security and sends details.</t>
+<t>QR code MUST contain the same structure as defined in <xref target="connection-ble"></xref>, except that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.</t>
+<t>How the Connection Setup Request reaches a Wallet of a user's choice that capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). The most certain way for a QR code to reach a target Wallet is to use a camera fature in a Wallet Application itself to scan a QR code.</t>
+</section>
+</section>
+
+<section anchor="data-exchange-flow"><name>Data Exchange Flow</name>
+<t>This section describes how the Wallet obtains Presentation Request from the Verifier, and how the Wallet sends Presentation Response to the Verifier after authenticating the user and obtaining consent to share Credential(s) with the Verifier.</t>
+<t>ToDo: Assume we want to support both sending only VC and VC in a VP?</t>
+<t>Wallet MUST support the Central role and is responsible for connectting to the Verifier. The Verifier MUST support the Peripheral Role and should advertise its details. After the connection is established, the Wallet has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.</t>
+<t>Step 1: Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?).
+Step 2: Wallet makes identify request and submits its keys to the verifier in plain text.
+Step 3: Wallet reads the Presentation request from the Verifier. (Encrypted with the secret key)
+Step 4: Wallet authenticates the User and obtains consent
+Step 5: Wallet submits the VC to the Verifier.
+Step 6: The verifier accepts the VC if they could decrypt and validate the signature.
+Step 7: Both the wallet and client records in their respective audit logs.</t>
+<t>ToDo: Are we limiting signature suites only to X25519?</t>
+
+<section anchor="service-definition"><name>UUID for Service Definition</name>
+<t>The Verifier acts as the server and the Verifier service MUST contain the following characteristics:</t>
+<t>Verifier Service UUID MUST be <tt>00000001-5026-444A-9E0E-D6F2450F3A77</tt>.</t>
+<table>
+<thead>
+<tr>
+<th>Characteristic name</th>
+<th>UUID</th>
+<th>Mandatory properties</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Request</td>
+<td>00000005-5026-444A-9E0E-D6F2450F3A77</td>
+<td>Read</td>
+<td>Get the request JSON</td>
+</tr>
+
+<tr>
+<td>Identify</td>
+<td>00000006-5026-444A-9E0E-D6F2450F3A77</td>
+<td>Write</td>
+<td>Wallet identifies</td>
+</tr>
+
+<tr>
+<td>Submit VC</td>
+<td>00000007-5026-444A-9E0E-D6F2450F3A77</td>
+<td>Write</td>
+<td>Submit the VC</td>
+</tr>
+</tbody>
+</table><t>+--------------------+--------------------------------------+-----------------------+---------------------+</t>
+<t>TODO: Can we plan to register our service with Bluetooth SIG? This will allow us to have</t>
+<t>ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.</t>
+<t>ToDo: Check if there are conventions to the UUID. Original in ISO is <tt>00000001-A123-48CE-896B-4C76973373E6</tt>.</t>
+</section>
+
+<section anchor="identity-request"><name>Identity Request</name>
+<t>ToDo: Need to elaborate.</t>
+</section>
+
+<section anchor="presentation-request"><name>Presentation Request</name>
+<t>Presentation Request MUST include <tt>presentation_definition</tt> parameter as defined in Section  of [OpenID4VP].</t>
+<t><tt>response_type</tt>, <tt>client_id</tt>, <tt>redirect_uri</tt> parameters MUST NOT be present in the Presentation Request.</t>
+<t>ToDo: Do we want nonce to be included? I believe we do.</t>
+</section>
+
+<section anchor="presentation-response"><name>Presentation Response</name>
+<t>Presentation Response MUST include <tt>presentation_submission</tt> and <tt>vp_token</tt> parameters as defined in Section 6 of [OpenID4VP].</t>
+</section>
+
+<section anchor="connection-closure"><name>Connection closure</name>
+<t>After data retrieval, the GATT client unsubscribes from all characteristics.</t>
+</section>
+
+<section anchor="connection-re-establishment"><name>Connection re-establishment</name>
+<t>In case of a lost connection a full flow is conducted again.</t>
+</section>
+
+<section anchor="session-termination"><name>Session Termination</name>
+<t>The session MUST be terminated if at least one of the following conditions occur:</t>
+
+<ul>
+<li><t>After a time-out of no activity occurs.</t>
+</li>
+<li><t>If the Wallet does not want to receive any further requests.</t>
+</li>
+<li><t>If the Verifier does not want to send any further requests.</t>
+</li>
+</ul>
+<t>Termination is as per the default BLE write.</t>
+<t>In case of a termination, the Wallet and Verifier MUST perform at least the following actions:</t>
+
+<ul>
+<li><t>Destruction of session keys and related ephemeral key material</t>
+</li>
+<li><t>Closure of the communication channel used for data retrieval.</t>
+</li>
+</ul>
+<t>[SASI] TODO: Should we support multiple encryption type or pick the signal route?</t>
+</section>
+</section>
+
+<section anchor="encryption"><name>Encryption</name>
+
+<section anchor="overview-1"><name>Overview</name>
+
+<ol>
+<li><t>The Wallet obtains Verifier's ephemeral key pair in the Connection Setup Request from BLE Advertisement or a QR Code.</t>
+</li>
+<li><t>The Wallet generates an ephemeral key pair.</t>
+</li>
+<li><t>The Wallet communicates its ephemeral key pair to the Verifier in the Identity Request.</t>
+</li>
+<li><t>The Verifier derives an encryption key using the Wallet's public key received in the Idenity Request, and encrypts Presentation Request using it.</t>
+</li>
+<li><t>The Wallet derives an encryption key using the Verifier's public key received in the Connection Set Up phase, decrypts Presentation Request and encrypts Presentation Response using it.</t>
+</li>
+<li><t>The Verifier decrypts Presentation Response using the encryption key computed in step 4.</t>
+</li>
+</ol>
+<t>Note that Connection Setup Request itself defined in <xref target="connection-set-up"></xref> MUST NOT be encrypted.</t>
+<t>ToDo: no algorithm identifier since looks like we are doing only X25519?</t>
+</section>
+
+<section anchor="session-key-computation"><name>Session Key Computation</name>
+<t>To calculate the session keys, the Wallet and the Verifier MUST perform ECKA-DH (Elliptic Curve Key Agreement Algorithm – Diffie-Hellman) as defined in BSI TR-03111. The Zab output defined in BSI TR-03111 MUST be used to derive 2 keys.</t>
+<t>The Verifier MUST derive session key using HKDF as defined in [RFC5869] with the following parameters:</t>
+
+<ul>
+<li><t>Hash: SHA-256</t>
+</li>
+<li><t>IKM: Zab</t>
+</li>
+<li><t>salt: SHA-256</t>
+</li>
+<li><t>info: “SKVerifier” (encoded as ASCII string)</t>
+</li>
+<li><t>L: 32 octets</t>
+</li>
+</ul>
+<t>The Wallet MUST derive session key using HKDF as defined in [RFC5869] with the following parameters:</t>
+
+<ul>
+<li><t>Hash: SHA-256</t>
+</li>
+<li><t>IKM: Zab</t>
+</li>
+<li><t>salt: SHA-256</t>
+</li>
+<li><t>info: “SKWallet” (encoded as ASCII string)</t>
+</li>
+<li><t>L: 32 octets</t>
+</li>
+</ul>
+<t>For encryption AES-256-GCM (192) or ChaCha20 (GCM: Galois Counter Mode) as defined in NIST SP 800-38D MUST be used.</t>
+<t>ToDo: Can we do ChaCha20? Rather than AES 256 GCM? The fact that ChaCha20 is more streaming.</t>
+<t>The IV (Initialization Vector defined in NIST SP 800-38D) used for encryption MUST have the default length of 12 bytes for GCM, as specified in NIST SP 800-38D. The IV MUST be the concatenation of the identifier and the message counter (identifier || message counter). The identifier MUST be an 8-byte value.</t>
+<t>The Verifier MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00.
+The Wallet MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x01.</t>
+<t>The Wallet and Verifier MUST keep a separate message counter for each session key. The message counter value MUST be a 4-byte big-endian unsigned integer. For the first encryption with a session key, the message counter MUST be set to 1. Before each following encryption with the same key, the message counter value MUST be increased by 1. A message counter value MUST never be reused in any future encryption using the same key. The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input for the GCM function MUST be an empty string. The plaintext used as input for the GCM function MUST be Wallet request or Wallet response. The value of the data element in the session establishment and session data messages as defined in 9.1.1.4 MUST be the concatenation of the ciphertext and all 16 bytes of the authentication tag (ciphertext || authentication tag).</t>
+<t>ToDo: Need to pharaphrase, currently text borrowed from ISO.</t>
+</section>
+</section>
+
+<section anchor="security-considerations"><name>Security Considerations</name>
+
+<section anchor="session-information"><name>Session Information</name>
+<t>Both wallet and the Verifier MUST remove all the information about the session after its termination.</t>
+</section>
+
+<section anchor="ensuring-the-wallet-is-connected-to-the-correct-verifier"><name>Ensuring the Wallet is Connected to the correct Verifier</name>
+<t>To ensure that the Wallet is connected to the correct Verifier. The Wallet may verify the Ident characteristic as described in Clause 8.3.3.1.4. The Ident characteristic value MUST be calculated using the following procedure:</t>
+<t>Use HKDF an defined in RFC 5869 with the following parameters:
+* Hash: SHA-256
+* IKM: EdeviceKeyBytes (see Clause 9.1.1.4)
+* salt: (no salt value is provided)
+* info:”BLEIdent” (encoded as ASCII string)
+* L: 16 octets
+If the Ident characteristic received from the Verifier does not match the expected value, the Wallet MUST disconnect from the Verifier.</t>
+<t>NOTE The purpose of the Ident characteristic is only to verify whether the Wallet is connected to the correct Verifier before setting starting OpenID4VP Request. If the Wallet is connected to the wrong Verifier, session establishment will fail. Connecting and disconnecting to an Verifier takes a relatively large amount of time and it is therefore fastest to implement methods to identify the correct Verifier to connect to and not to rely purely on the Ident characteristic to identify the correct Verifier.</t>
+<t>ToDo: Need to pharaphrase, currently text borrowed from ISO.</t>
+</section>
+
+<section anchor="verifier-authentication"><name>Verifier Authentication</name>
+<t>How does the wallet authenticate the Verifier?</t>
+</section>
+
+<section anchor="session-binding"><name>Session Binding</name>
+<t>How does the Verifier know a particular response is tied to a particular request?</t>
+</section>
+
+<section anchor="other"><name>Other</name>
+<t>ToDo: Mention that BLE HW is inherently not secure? securing which is out of scope of this protocol?</t>
+</section>
+</section>
+
+<section anchor="discussion-points"><name>Discussion points</name>
+
+<ul>
+<li><t>not requiring nor recommending BLE secure connections.</t>
+</li>
+</ul>
+</section>
+
+</middle>
+
+<back>
+
+</back>
+
+</rfc>
