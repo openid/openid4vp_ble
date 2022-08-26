@@ -105,19 +105,9 @@ During step 1, ephemeral keys to encrypt the session are exchanged.
 
 Step 2 utilizes request and response syntax defined in [OpenID4VP] specification. Response type `vp_token` MUST be used to obtain the VP Token in Authorization Response.
 
-# Protocol Flow
+# Protocol Flow Overview
 
-## Simple Flow 
-
-Verifier opens his app
-Moves to the accepting OpenID4VP mode.
-Verifier app starts BLE advertisement. 
-The same can be made as a request QR code.
-Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one) or a QR code is scanned.
-Wallet connects.
-Negotiates Security and details to be sent.
-Sends VC
-
+Below is the diagram that illustrates protocol flow:
 
 ~~~ ascii-art
 +-------------+                                         +----------------+
@@ -130,24 +120,38 @@ Sends VC
 |             |       +----------+                      |                |
 |             |       |          |                      |                |
 |             |       | End-User |                      |                |
-| Verifier    |       |          |<-- AuthN & AuthZ --->|     Wallet     |
+| Verifier    |       |          |<- (3) AuthN & AuthZ->|     Wallet     |
 | (Peripheral |       |          |                      | (Central GAP   |
 |  GAP Role,  |       +----------+                      |  Role,         |
 |  Server)    |                                         |  Client)       |
-|             |<---- (3) OpenID4VP Response over BLE ---|                |
+|             |<---- (4) OpenID4VP Response over BLE ---|                |
 |             |      (verifiable presentation)          |                |
 |             |                                         |                |
-|             |----- (4) Finalize the exchange -------->|                |
+|             |----- (5) [opt] Finalize the exchange -->|                |
 +-------------+          & Close connection             +----------------+
 ~~~
 Figure: OpenID4VP over BLE Protocol Flow
 
-ToDo: Don't think Wallet has means to interact with the User to authenticate and get consent...
+(1) Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.
+(2) Wallet obtains Presentation Request from the Verifier.
+(3) Wallet authenticates the user and obtains consent to share Credential(s) with the Verifier.
+(4) Wallet sends Presentation Response to the Verifier with Verifiable Presntation(s).
+(5) [Optionally] Verifier and the Wallet close connection.
 
-## 
+## Estabilishing Connection using BLE Advertizement
 
-BLE Advertisement Packet structure
+This section describes how Verifier and the Wallet can establish connection by Verifier initiating BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.
 
+(1) Verifier opens it's native application
+(2) Verifiers starts the mode that accepts OpenID4VP.
+(3) Verifier app starts BLE advertisement.
+(5) Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one)
+(6) Wallet connects to the Verifier.
+(7) Wallet negotiates Security and sends details.
+
+BLE Advertisement Packet structure MUST be the following:
+
+```
 PDU:
     Header:
         PDU type: ADV_IND
@@ -159,21 +163,19 @@ PDU:
             Adv Type: Complete Local Name
             flag: "LE General Discoverable Mode", "BR/EDR Not Supported"
             Data: OPENID4VP_8520f0098930a754748b7ddcb43ef75a (5 bytes + 16 bytes ) Half of the random X25519 public key
+```
 
+Verifier advertises half of the public key in the original BLE Advertisement Packet. The remainng half of the key (0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
 
-Use the same structure with the remainng half of the key (0dbf3a0d26381af4eba4a98eaa9b4e6a) during scan response.
-
-
-
-QR Code Dynamic - OPENID4VP, public key (ED25519 key)
 BLE Advertisement -  OPENID4VP, first 16 byte of ED25519 public key (max available size 29 byte), Response to the scan we will send the remaining 16 byte of ED25519, 
 
 +-----------+                       +-----------+
 |           |-----PDU ADV_IND------>|           |
 |  Adv      |<----SCAN_REQ----------| Scanner   |
-|           |-----SCAN_RESP-------->|           |
+| (Verifier)|-----SCAN_RESP-------->| (Wallet)  |
 +-----------+                       +-----------+
 
+Note that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.
 
 # Connection Flow
 
