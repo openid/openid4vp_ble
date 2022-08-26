@@ -200,15 +200,17 @@ This section describes how the Wallet obtains Presentation Request from the Veri
 
 ToDo: Assume we want to support both sending only VC and VC in a VP?
 
-Wallet MUST support the Central role and is responsible to connect to the Verifier. The Verifier MUST support the Peripheral Role and should advertise its details. After the connection is established, the Wallet has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.
+Wallet MUST support the Central role and is responsible for connectting to the Verifier. The Verifier MUST support the Peripheral Role and should advertise its details. After the connection is established, the Wallet has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.
 
 Step 1: Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
-Step 2: Identify request is made and wallet submits its key to the verifier (plain text).
-Step 3: Wallet reads the Presentation request from the Verifier . (Encrypted with the secret key)
-Step 4: Wallet shows the Presentation requrest to the user to get his consent/permission.  
-Step 5: Upon consent Wallet does the necessary authentication if requested and then Submits the VC
+Step 2: Wallet makes identify request and submits its keys to the verifier in plain text.
+Step 3: Wallet reads the Presentation request from the Verifier. (Encrypted with the secret key)
+Step 4: Wallet authenticates the User and obtains consent
+Step 5: Wallet submits the VC to the Verifier.
 Step 6: The verifier accepts the VC if they could decrypt and validate the signature.
 Step 7: Both the wallet and client records in their respective audit logs.
+
+ToDo: Are we limiting signature suites only to X25519?
 
 ## UUID for Service Definition {#service-definition}
 
@@ -228,6 +230,22 @@ TODO: Can we plan to register our service with Bluetooth SIG? This will allow us
 ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.
 
 ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
+
+## Identity Request
+
+ToDo: Need to elaborate.
+
+## Presentation Request
+
+Presentation Request MUST include `presentation_definition` parameter as defined in Section  of [OpenID4VP].
+
+`response_type`, `client_id`, `redirect_uri` parameters MUST NOT be present in the Presentation Request.
+
+ToDo: Do we want nonce to be included? I believe we do.
+
+## Presentation Response
+
+Presentation Response MUST include `presentation_submission` and `vp_token` parameters as defined in Section 6 of [OpenID4VP].
 
 ## Connection closure 
 
