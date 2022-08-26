@@ -127,7 +127,7 @@ Below is the diagram that illustrates protocol flow:
 |             |<---- (4) OpenID4VP Response over BLE ---|                |
 |             |      (verifiable presentation)          |                |
 |             |                                         |                |
-|             |----- (5) [opt] Finalize the exchange -->|                |
+|             |----- (5) Finalize the exchange -------->|                |
 +-------------+          & Close connection             +----------------+
 ~~~
 Figure: OpenID4VP over BLE Protocol Flow
@@ -136,18 +136,18 @@ Figure: OpenID4VP over BLE Protocol Flow
 (2) Wallet obtains Presentation Request from the Verifier.
 (3) Wallet authenticates the user and obtains consent to share Credential(s) with the Verifier.
 (4) Wallet sends Presentation Response to the Verifier with Verifiable Presntation(s).
-(5) [Optionally] Verifier and the Wallet close connection.
+(5) Verifier and the Wallet close connection.
 
-## Estabilishing Connection using BLE Advertizement
+## Estabilishing Connection using BLE Advertisement
 
 This section describes how Verifier and the Wallet can establish connection by Verifier initiating BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.
 
 (1) Verifier opens it's native application
 (2) Verifiers starts the mode that accepts OpenID4VP.
 (3) Verifier app starts BLE advertisement.
-(5) Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one)
-(6) Wallet connects to the Verifier.
-(7) Wallet negotiates Security and sends details.
+(4) Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one)
+(5) Wallet connects to the Verifier.
+(6) Wallet negotiates Security and sends details.
 
 BLE Advertisement Packet structure MUST be the following:
 
@@ -177,25 +177,33 @@ BLE Advertisement -  OPENID4VP, first 16 byte of ED25519 public key (max availab
 
 Note that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.
 
+## Estabilishing Connection using QR Code
+
+This section describes how Verifier and the Wallet can establish connection by Verifier displaying a QR Code scanned using the Wallet.
+
+(1) Verifier opens it's native application
+(2) Verifiers displays a QR Code
+(3) Wallet scans the QR Code.
+(4) Wallet connects to the Verifier.
+(5) Wallet negotiates Security and sends details.
+
 # Connection Flow
 
-Wallet MUST support the Central role and is responsible to connect to the verifier. The Verifier MUST support the Peripheral Role and should advertise its details. As the advertisement completes the Wallet now has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.
+Wallet MUST support the Central role and is responsible to connect to the Verifier. The Verifier MUST support the Peripheral Role and should advertise its details. After the connection is established, the Wallet has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.
 
-Step 1: Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose signal protocol?). 
+Step 1: Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
 Step 2: Identify request is made and wallet submits its key to the verifier (plain text).
-Step 3: Wallet reads the request from the Verifier . (Encrypted with the secret key)
-Step 4: Wallet shows the requrest to the user to get his consent/permission.  
+Step 3: Wallet reads the Presentation request from the Verifier . (Encrypted with the secret key)
+Step 4: Wallet shows the Presentation requrest to the user to get his consent/permission.  
 Step 5: Upon consent Wallet does the necessary authentication if requested and then Submits the VC
 Step 6: The verifier accepts the VC if they could decrypt and validate the signature.
 Step 7: Both the wallet and client records in their respective audit logs.
 
 ## UUID for Service Definition {#service-definition}
 
-The Verifier service MUST contain the following characteristics, since the Verifier acts as the server.
+The Verifier acts as the server and the Verifier service MUST contain the following characteristics:
 
-TODO: Can we plan to register our service with Bluetooth SIG? This will allow us to have 
-
-Verifier Service - UUID 00000001-5026-444A-9E0E-D6F2450F3A77 
+Verifier Service UUID MUST be `00000001-5026-444A-9E0E-D6F2450F3A77`.
 
 |Characteristic name | UUID                                 | Mandatory properties  | Description         |
 |--------------------|--------------------------------------|-----------------------|---------------------|
@@ -203,6 +211,8 @@ Verifier Service - UUID 00000001-5026-444A-9E0E-D6F2450F3A77
 |Identify            | 00000006-5026-444A-9E0E-D6F2450F3A77 | Write                 | Wallet identifies   |
 |Submit VC           | 00000007-5026-444A-9E0E-D6F2450F3A77 | Write                 | Submit the VC       |
 +--------------------+--------------------------------------+-----------------------+---------------------+
+
+TODO: Can we plan to register our service with Bluetooth SIG? This will allow us to have 
 
 ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.
 
@@ -219,6 +229,7 @@ In case of a lost connection a full flow is conducted again.
 ## Session Termination {#session-termination}
 
 The session MUST be terminated if at least one of the following conditions occur: 
+
 * After a time-out of no activity occurs. 
 * If the Wallet does not want to receive any further requests. 
 * If the Verifier does not want to send any further requests. 
@@ -226,10 +237,12 @@ The session MUST be terminated if at least one of the following conditions occur
 Termination is as per the default BLE write. 
 
 In case of a termination, the Wallet and Verifier MUST perform at least the following actions: 
+
 * Destruction of session keys and related ephemeral key material 
 * Closure of the communication channel used for data retrieval.
 
 [SASI] TODO: Should we support multiple encryption type or pick the signal route?
+
 # Encryption
 
 ## Overview
@@ -263,7 +276,7 @@ The Wallet MUST derive session key using HKDF as defined in [RFC5869] with the f
 * info: “SKWallet” (encoded as ASCII string) 
 * L: 32 octets 
 
-For encryption AES-256-GCM (192) /ChaCha20 (GCM: Galois Counter Mode) as defined in NIST SP 800-38D MUST be used. 
+For encryption AES-256-GCM (192) or ChaCha20 (GCM: Galois Counter Mode) as defined in NIST SP 800-38D MUST be used. 
 
 ToDo: Can we do ChaCha20? Rather than AES 256 GCM? The fact that ChaCha20 is more streaming.
 
@@ -280,7 +293,7 @@ The Wallet and Verifier MUST keep a separate message counter for each session ke
 
 Both wallet and the Verifier MUST remove all the information about the session after its termination.
 
-## Ensuring the Wallet is Connected to teh correct Verifier
+## Ensuring the Wallet is Connected to the correct Verifier
 
 To ensure that the Wallet is connected to the correct Verifier. The Wallet may verify the Ident characteristic as described in Clause 8.3.3.1.4. The Ident characteristic value MUST be calculated using the following procedure: 
 
@@ -296,9 +309,17 @@ NOTE The purpose of the Ident characteristic is only to verify whether the Walle
 
 ToDo: Fix the language to be less ISOy.
 
-# Security Considerations
+## Verifier Authentication
 
-How to secure what happens before what is defined in this protocol.
+How does the wallet authenticate the Verifier?
+
+## Session Binding
+
+How does the Verifier know a particular response is tied to a particular request?
+
+## Other
+
+ToDo: Mention that BLE HW is inherently not secure? securing which is out of scope of this protocol?
 
 # Discussion points
  
