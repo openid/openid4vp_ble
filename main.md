@@ -247,6 +247,20 @@ ToDo: Do we want nonce to be included? I believe we do.
 
 Presentation Response MUST include `presentation_submission` and `vp_token` parameters as defined in Section 6 of [OpenID4VP].
 
+{
+    "presentation_submission": {
+
+    },
+    "vp_token": [
+        {
+            VP1
+        },
+        {
+            VP2
+        }
+    ] 
+}
+
 ## Connection closure 
 
 After data retrieval, the GATT client unsubscribes from all characteristics. 
