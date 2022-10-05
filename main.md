@@ -251,7 +251,7 @@ TODO: Can we plan to register our service with Bluetooth SIG? This will allow us
 
 ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.
 
-ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
+ToDo: Check if there are conventions to the UUID. Current UUID has been randomly generated.
 
 ## Identity Request
 
