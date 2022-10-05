@@ -346,18 +346,18 @@ To calculate the session keys, the Wallet and the Verifier MUST perform ECKA-DH 
 The Verifier MUST derive session key using HKDF as defined in [RFC5869] with the following parameters: 
 
 * Hash: SHA-256 
-* IKM: Zab 
-* salt: SHA-256
-* info: “SKVerifier” (encoded as ASCII string) 
-* L: 32 octets 
+* IKM: Zab // discuss
+* salt: SHA-256(???) // discuss
+* info: “OpenID4VPVerifier” (encoded as ASCII string) 
+* L: 32 octets // discuss
 
 The Wallet MUST derive session key using HKDF as defined in [RFC5869] with the following parameters: 
 
 * Hash: SHA-256 
-* IKM: Zab 
-* salt: SHA-256
-* info: “SKWallet” (encoded as ASCII string) 
-* L: 32 octets 
+* IKM: Zab // discuss 
+* salt: SHA-256(???) // discuss
+* info: “OpenID4VPWallet” (encoded as ASCII string) 
+* L: 32 octets // discuss
 
 For encryption AES-256-GCM (192) (GCM: Galois Counter Mode)  as defined in NIST SP 800-38D or ChaCha20 RFC 8439 MUST be used. 
 
