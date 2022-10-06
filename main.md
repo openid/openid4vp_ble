@@ -52,15 +52,13 @@ organization="MOSIP"
 
 .# Abstract
 
-This document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credentials. It uses request and response syntax defined in [OpenID4VP] specification.
+This document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credentials. It uses request and response syntax as defined in [@!OpenID4VP].
 
 {mainmatter}
 
 # Introduction
 
-This document enables Wallets and the Verifiers who have implemented [OpenID4VP] to be able to request and receive verifiable presentations even when one or both of the entities do not have Internet connection.
-
-The document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credential.It uses request and response syntax defined in [OpenID4VP] specification.
+This document enables Wallets and the Verifiers who have implemented [@!OpenID4VP] to request and receive verifiable presentations even if one or both of the entities do not have Internet connection by utilizing Bluetooth Low Energy (BLE). This document uses request and response syntax as defined in [@!OpenID4VP].
 
 # Terms and Definitions
 
@@ -86,22 +84,24 @@ ToDo: "Connection" or "Session"?
 
 # Overview
 
-Wallet and the Verifier MUST implement BLE according to the [Bluetooth Core Specification 4.0](https://www.bluetooth.com/specifications/specs/core-specification-4-0/). 
+Wallet and the Verifier MUST implement BLE according to the [!@Bluetooth.4.Core]. 
 
-Wallet and the Verifier MUST support LE Data Packet Length Extension.
+Wallet and the Verifier MUST support LE Data Packet Length Extension. [TLT: Reference?]
 
 ToDo: For the wallet, mDL mandates 4.0, and recommends 4.2. and LE data Pathet Length Extension. For the reader, 4.2 and LE Data Packet Length Extension is mandated and 5.0 and LE 2M PHY is recommended.
 
 The protocol consists of the following two steps:
 
-1. Establishing a connection
+1. Establishing a BLE connection
 2. Verifying the parties
 3. Exchanging verifiable credentials
 4. Finalizing the exchange
 
 During step 1, ephemeral keys to encrypt the session are exchanged. 
+Note: authentication of the parties can be implemented on the OpenID layer. 
 
-Step 2 utilizes request and response syntax defined in [OpenID4VP] specification. Response type `vp_token` MUST be used to obtain the VP Token in Authorization Response.
+Step 2 utilizes request and response syntax as defined in [!@OpenID4VP]. Response type `vp_token` MUST be used to obtain the VP Token in Authorization Response.
+[TLT: why do we need a response type at all?]
 
 # Limitation
 
@@ -112,14 +112,13 @@ We need to be considerate of the following limitations in BLE stack 4.2
     * The advertisement scan request can not have any custom data.
     * The scan response can have custom data.  
 2. Timing
-    * BLE Scanning and advertising are discrete events, so not every advertisement is received ```(max ~30 sec)```
+    * BLE Scanning and advertising are discrete events, so not every advertisement is received ```(max ~30 sec)``` [TLT: what does the max 30s mean?]
 3. Throughput
     * Default MTU size is 23 bytes and max is 512 bytes
     * 14 bytes are overhead cost per packet (MTU).
     * 0.226 ~ 0.301 Mbps (Mega bits per second). So data rate of ~0.10 Mbps
-
-
-
+[TLT: don't understand why the effective rate is 1/3 of the overall throuput given max MTU is 512 Bytes (to 14 bytes overhead)?]
+[TLT: should we also mention that the protocol isn't really a message exchange but rather the wallet setting and reading things?]
 
 # Protocol Flow Overview
 
@@ -156,18 +155,19 @@ Figure: OpenID4VP over BLE Protocol Flow
 
 # Connection Set up {#connection-set-up}
 
-First, Verifier and the Wallet need to establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.
+First, Verifier and the Wallet need to establish the connection. This specification defines two mechanisms to do so: BLE Advertisement initiated by the Verifier and QR code displayed by the Verifier.
 
 ## Estabilishing Connection using BLE Advertisement {#connection-ble}
 
 This section describes how Verifier and the Wallet can establish connection by Verifier initiating BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.
 
-(1) Verifier opens it's native application
+(1) Verifier opens it's native application [TLT: why is that important (opening an app and that it is a native app)?]
 (2) Verifiers starts the mode that accepts OpenID4VP.
 (3) Verifier app starts BLE advertisement.
-(4) Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one)
+(4) Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
 (5) Wallet connects to the Verifier.
-(6) Wallet negotiates Security and sends details.
+(6) Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
+(7) Wallet makes identify request and submits its keys to the verifier in plain text.
 
 BLE Advertisement Packet structure MUST be the following:
 
@@ -184,19 +184,21 @@ PDU:
             flag: "LE General Discoverable Mode", "BR/EDR Not Supported"
             Data: OPENID4VP_8520f0098930a754748b7ddcb43ef75a (5 bytes + 16 bytes ) Half of the random X25519 public key
 ```
+[TLT: why doesn't the verifier just send OPENID4VP and the key in the subsequent request. That would allow the verifier to use connection specific keys even if running for a longer period (think security gate)]
 
-Verifier advertises half of the public key in the original BLE Advertisement Packet. The remainng half of the key (0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
+Verifier advertises half of the public key in the original BLE Advertisement Packet (max available size 29 byte). The remainng half of the key (16 byte of ED25519 - example: 0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
 
-BLE Advertisement -  OPENID4VP, first 16 byte of ED25519 public key (max available size 29 byte), Response to the scan we will send the remaining 16 byte of ED25519, 
-
+~~~ ascii-art
 +------------+                       +-----------+
 |            |-----PDU ADV_IND------>|           |
 | Advertiser |<----SCAN_REQ----------| Scanner   |
 | (Verifier) |-----SCAN_RESP-------->| (Wallet)  |
 |            |                       |           |
 +------------+                       +-----------+
+~~~
 
 ToDo: Need to explain this diagram better.
+[TLT: I cannot map the desciption above with the diagram. How many messages are exchanged?]
 
 ## Estabilishing Connection using QR Code
 
@@ -206,31 +208,166 @@ This section describes how Verifier and the Wallet can establish connection by V
 (2) Verifiers displays a QR Code
 (3) Wallet scans the QR Code.
 (4) Wallet connects to the Verifier.
-(5) Wallet negotiates Security and sends details.
+(6) Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
+(7) Wallet makes identify request and submits its keys to the verifier in plain text.
 
 QR code MUST contain the same structure as defined in (#connection-ble), except that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.
+[TLT: putting the QR code means the verifier is required to use the same key for any connection? So we loose the ability to seggragate connections to different wallets or the verifier needs to render a new QR code for every transaction. Think of the security gate again. I would prefer to setup the key in a separate step.]
 
-How the Connection Setup Request reaches a Wallet of a user's choice that capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). The most certain way for a QR code to reach a target Wallet is to use a camera fature in a Wallet Application itself to scan a QR code.
+How the Connection Setup Request reaches a Wallet of a user's choice that capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). 
+[TLT: I'm confused. Do you truely believe a verifier renders a URL with a custom scheme conaining a QR Code? That would mean, the wallet receives the request on the same device and then starts BLE?.}
 
-# Data Exchange Flow
+The most certain way for a QR code to reach a target Wallet is to use a camera fature in a Wallet Application itself to scan a QR code.
 
-This section describes how the Wallet obtains Presentation Request from the Verifier, and how the Wallet sends Presentation Response to the Verifier after authenticating the user and obtaining consent to share Credential(s) with the Verifier.
+# OpenID4VP Request over BLE
+
+On the BLE layer the request is performed by the Wallet reading the Presentation request from the Verifier.
+
+The Request is represented as a signed request object containing the parameters as defined in [!@OpenID4VP].
+[TLT: is there a kind of transport encryption or is the request object encrypted?]
+
+The request MUST contain the verifier's client id in the `iss` claim. 
+The request MUST contain the wallet identifier in the `aud` claim. 
+[TLT: not sure what identifier to use - aud and nonce together are intended for replay detection]
+
+The request MUST include one of the following parameters:
+* `presentation_definition` or
+* `presentation_definition_uri` or
+* `scope` (if that scope represents a credential presentation request or is `openid`)
+
+The request SHOULD contain a `nonce`. 
+
+The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
+
+The following is a non normative example of a request before signing:
+
+```json
+{
+    "iss": "s6BhdRkqt3",
+    "aud": "wallet_id",
+    "nonce": "n-0S6_WzA2Mj",
+    "presentation_definition": {
+        "id": "vp token example",
+        "input_descriptors": [
+            {
+                "id": "id card credential",
+                "format": {
+                    "ldp_vc": {
+                        "proof_type": [
+                            "Ed25519Signature2018"
+                        ]
+                    }
+                },
+                "constraints": {
+                    "fields": [
+                        {
+                            "path": [
+                                "$.type"
+                            ],
+                            "filter": {
+                                "type": "string",
+                                "pattern": "IDCardCredential"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}
+```
+
+# OpenID4VP Response over BLE
+
+On the BLE layer the response is transmitted by the Wallet submitting the presentation to the Verifier.
+
+The response contains the parameters as defined in Section 6 of [!@OpenID4VP] in JSON encoding. 
+
+The wallet MAY sign the request. In this case, the response is encoded as a JWT. 
+
+[TLT: is there a kind of transport encryption or is the response object encrypted?]
 
 ToDo: Assume we want to support both sending only VC and VC in a VP?
-
-Wallet MUST support the Central role and is responsible for connectting to the Verifier. The Verifier MUST support the Peripheral Role and should advertise its details. After the connection is established, the Wallet has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.
-
-Step 1: Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
-Step 2: Wallet makes identify request and submits its keys to the verifier in plain text.
-Step 3: Wallet reads the Presentation request from the Verifier. (Encrypted with the secret key)
-Step 4: Wallet authenticates the User and obtains consent
-Step 5: Wallet submits the VC to the Verifier.
-Step 6: The verifier accepts the VC if they could decrypt and validate the signature.
-Step 7: Both the wallet and client records in their respective audit logs.
+[TLT: why should we deviate from OpenID4VP?]
 
 ToDo: Are we limiting signature suites only to X25519?
 
+The following is a non normative example of a response before signing:
+
+```json
+{
+    "presentation_submission": {
+        "id": "Selective disclosure example presentation",
+        "definition_id": "Selective disclosure example",
+        "descriptor_map": [
+            {
+                "id": "ID Card with constraints",
+                "format": "ldp_vp",
+                "path": "$",
+                "path_nested": {
+                    "format": "ldp_vc",
+                    "path": "$.verifiableCredential[0]"
+                }
+            }
+        ]
+    },
+    "vp_token": [
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1"
+            ],
+            "type": [
+                "VerifiablePresentation"
+            ],
+            "verifiableCredential": [
+                {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://www.w3.org/2018/credentials/examples/v1"
+                    ],
+                    "id": "https://example.com/credentials/1872",
+                    "type": [
+                        "VerifiableCredential",
+                        "IDCardCredential"
+                    ],
+                    "issuer": {
+                        "id": "did:example:issuer"
+                    },
+                    "issuanceDate": "2010-01-01T19:23:24Z",
+                    "credentialSubject": {
+                        "given_name": "Fredrik",
+                        "family_name": "Str&#246;mberg",
+                        "birthdate": "1949-01-22"
+                    },
+                    "proof": {
+                        "type": "Ed25519Signature2018",
+                        "created": "2021-03-19T15:30:15Z",
+                        "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..PT8yCqVjj5ZHD0W36zsBQ47oc3El07WGPWaLUuBTOT48IgKI5HDoiFUt9idChT_Zh5s8cF_2cSRWELuD8JQdBw",
+                        "proofPurpose": "assertionMethod",
+                        "verificationMethod": "did:example:issuer#keys-1"
+                    }
+                }
+            ],
+            "id": "ebc6f1c2",
+            "holder": "did:example:holder",
+            "proof": {
+                "type": "Ed25519Signature2018",
+                "created": "2021-03-19T15:30:15Z",
+                "challenge": "n-0S6_WzA2Mj",
+                "domain": "https://client.example.org/cb",
+                "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..GF5Z6TamgNE8QjE3RbiDOj3n_t25_1K7NVWMUASe_OEzQV63GaKdu235MCS3hIYvepcNdQ_ZOKpGNCf0vIAoDA",
+                "proofPurpose": "authentication",
+                "verificationMethod": "did:example:holder#key-1"
+            }
+        }
+    ]
+}
+```
+
+# BLE Details
 ## UUID for Service Definition {#service-definition}
+
+[TLT: I don't understand how this section is related to the previous sections? Should that be an appendix?]
 
 The Verifier acts as the server and the Verifier service MUST contain the following characteristics:
 
@@ -252,36 +389,6 @@ TODO: Can we plan to register our service with Bluetooth SIG? This will allow us
 ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.
 
 ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
-
-## Identity Request
-
-ToDo: Need to elaborate.
-
-## Presentation Request
-
-Presentation Request MUST include `presentation_definition` parameter as defined in Section  of [OpenID4VP].
-
-`response_type`, `client_id`, `redirect_uri` parameters MUST NOT be present in the Presentation Request.
-
-ToDo: Do we want nonce to be included? I believe we do.
-
-## Presentation Response
-
-Presentation Response MUST include `presentation_submission` and `vp_token` parameters as defined in Section 6 of [OpenID4VP].
-
-{
-    "presentation_submission": {
-
-    },
-    "vp_token": [
-        {
-            VP1
-        },
-        {
-            VP2
-        }
-    ] 
-}
 
 ## Stream Write Packet Structure
 
@@ -408,3 +515,36 @@ ToDo: Mention that BLE HW is inherently not secure? securing which is out of sco
 - not requiring nor recommending BLE secure connections.
 
 {backmatter}
+
+<reference anchor="OpenID4VP" target="https://openid.net/specs/openid-4-verifiable-presentations-1_0.html">
+  <front>
+    <title>OpenID for Verifiable Presentations</title>
+    <author initials="O." surname="Terbu" fullname="Oliver Terbu">
+      <organization>ConsenSys Mesh</organization>
+    </author>
+    <author initials="T." surname="Lodderstedt" fullname="Torsten Lodderstedt">
+      <organization>yes.com</organization>
+    </author>
+    <author initials="K." surname="Yasuda" fullname="Kristina Yasuda">
+      <organization>Microsoft</organization>
+    </author>
+    <author initials="A." surname="Lemmon" fullname="Adam Lemmon">
+      <organization>Convergence.tech</organization>
+    </author>
+    <author initials="T." surname="Looker" fullname="Tobias Looker">
+      <organization>Mattr</organization>
+    </author>
+    <date day="20" month="May" year="2021"/>
+  </front>
+</reference>
+
+<reference anchor="Bluetooth.4.Core" target="https://www.bluetooth.com/specifications/specs/core-specification-4-0/">
+        <front>
+          <title>Bluetooth Core Specification 4.0</title>
+          <author>
+            <organization>Bluetooth SIG, Inc.</organization>
+          </author>
+          <date year="2010"/>
+        </front>
+</reference>
+
