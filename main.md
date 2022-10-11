@@ -7,7 +7,7 @@ keyword = ["security", "openid", "ssi"]
 
 [seriesInfo]
 name = "Internet-Draft"
-value = "openid-for-verifiable-presentations-offline-1_0-01"
+value = "openid-for-verifiable-presentations-offline-1_0-00"
 status = "standard"
 
 [[author]]
@@ -84,7 +84,7 @@ ToDo: "Connection" or "Session"?
 
 # Overview
 
-Wallet and the Verifier MUST implement BLE according to the [!@Bluetooth.4.Core]. 
+Wallet and the Verifier MUST implement BLE according to the [@!Bluetooth.4.Core] specification . 
 
 Wallet and the Verifier MUST support LE Data Packet Length Extension. [TLT: Reference?]
 
@@ -548,3 +548,20 @@ ToDo: Mention that BLE HW is inherently not secure? securing which is out of sco
         </front>
 </reference>
 
+<reference anchor="Bluetooth.4.Core" target="https://www.bluetooth.com/specifications/specs/core-specification-4-0/">
+        <front>
+          <title>Bluetooth Core Specification 4.0</title>
+          <author>
+            <organization>Bluetooth SIG, Inc.</organization>
+          </author>
+          <date year="2010"/>
+        </front>
+</reference>
+
+# Document History
+
+   [[ To be removed from the final specification ]]
+
+   -00 
+
+   *  initial revision
