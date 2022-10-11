@@ -86,7 +86,7 @@ ToDo: "Connection" or "Session"?
 
 Wallet and the Verifier MUST implement BLE according to the [@!Bluetooth.4.Core] specification . 
 
-Wallet and the Verifier MUST support LE Data Packet Length Extension. [TLT: Reference?]
+Wallet and the Verifier MUST support LE Data Packet Length Extension according to [@!Bluetooth.4.2.Core] section 4.5.10.
 
 ToDo: For the wallet, mDL mandates 4.0, and recommends 4.2. and LE data Pathet Length Extension. For the reader, 4.2 and LE Data Packet Length Extension is mandated and 5.0 and LE 2M PHY is recommended.
 
@@ -98,9 +98,9 @@ The protocol consists of the following two steps:
 4. Finalizing the exchange
 
 During step 1, ephemeral keys to encrypt the session are exchanged. 
-Note: authentication of the parties can be implemented on the OpenID layer. 
+Note: authentication of the Wallet and the Verifier can be implemented on the OpenID layer. 
 
-Step 2 utilizes request and response syntax as defined in [!@OpenID4VP]. Response type `vp_token` MUST be used to obtain the VP Token in Authorization Response.
+Step 2 utilizes request and response syntax as defined in [@!OpenID4VP]. Response type `vp_token` MUST be used to obtain the VP Token in Authorization Response.
 [TLT: why do we need a response type at all?]
 
 # Limitation
@@ -223,7 +223,7 @@ The most certain way for a QR code to reach a target Wallet is to use a camera f
 
 On the BLE layer the request is performed by the Wallet reading the Presentation request from the Verifier.
 
-The Request is represented as a signed request object containing the parameters as defined in [!@OpenID4VP].
+The Request is represented as a signed request object containing the parameters as defined in [@!OpenID4VP].
 [TLT: is there a kind of transport encryption or is the request object encrypted?]
 
 The request MUST contain the verifier's client id in the `iss` claim. 
@@ -232,7 +232,6 @@ The request MUST contain the wallet identifier in the `aud` claim.
 
 The request MUST include one of the following parameters:
 * `presentation_definition` or
-* `presentation_definition_uri` or
 * `scope` (if that scope represents a credential presentation request or is `openid`)
 
 The request SHOULD contain a `nonce`. 
@@ -243,37 +242,39 @@ The following is a non normative example of a request before signing:
 
 ```json
 {
-    "iss": "s6BhdRkqt3",
-    "aud": "wallet_id",
-    "nonce": "n-0S6_WzA2Mj",
-    "presentation_definition": {
-        "id": "vp token example",
-        "input_descriptors": [
-            {
-                "id": "id card credential",
-                "format": {
-                    "ldp_vc": {
-                        "proof_type": [
-                            "Ed25519Signature2018"
-                        ]
-                    }
-                },
-                "constraints": {
-                    "fields": [
-                        {
-                            "path": [
-                                "$.type"
-                            ],
-                            "filter": {
-                                "type": "string",
-                                "pattern": "IDCardCredential"
-                            }
+   "iss":"s6BhdRkqt3",
+   "aud":"wallet_id",
+   "nonce":"n-0S6_WzA2Mj",
+   "presentation_definition":{
+      "id":"example_jwt_vc",
+      "input_descriptors":[
+         {
+            "id":"id_credential",
+            "format":{
+               "jwt_vc":{
+                  "proof_type":[
+                     "JsonWebSignature2020"
+                  ]
+               }
+            },
+            "constraints":{
+               "fields":[
+                  {
+                     "path":[
+                        "$.vc.type"
+                     ],
+                     "filter":{
+                        "type":"array",
+                        "contains":{
+                           "const":"IDCredential"
                         }
-                    ]
-                }
+                     }
+                  }
+               ]
             }
-        ]
-    }
+         }
+      ]
+   }
 }
 ```
 
@@ -296,71 +297,22 @@ The following is a non normative example of a response before signing:
 
 ```json
 {
-    "presentation_submission": {
-        "id": "Selective disclosure example presentation",
-        "definition_id": "Selective disclosure example",
-        "descriptor_map": [
-            {
-                "id": "ID Card with constraints",
-                "format": "ldp_vp",
-                "path": "$",
-                "path_nested": {
-                    "format": "ldp_vc",
-                    "path": "$.verifiableCredential[0]"
-                }
+   "presentation_submission":{
+      "definition_id":"example_jwt_vc",
+      "id":"id_credential",
+      "descriptor_map":[
+         {
+            "id":"id_credential",
+            "path":"$",
+            "format":"jwt_vp",
+            "path_nested":{
+               "path":"$.vp.verifiableCredential[0]",
+               "format":"jwt_vc"
             }
-        ]
-    },
-    "vp_token": [
-        {
-            "@context": [
-                "https://www.w3.org/2018/credentials/v1"
-            ],
-            "type": [
-                "VerifiablePresentation"
-            ],
-            "verifiableCredential": [
-                {
-                    "@context": [
-                        "https://www.w3.org/2018/credentials/v1",
-                        "https://www.w3.org/2018/credentials/examples/v1"
-                    ],
-                    "id": "https://example.com/credentials/1872",
-                    "type": [
-                        "VerifiableCredential",
-                        "IDCardCredential"
-                    ],
-                    "issuer": {
-                        "id": "did:example:issuer"
-                    },
-                    "issuanceDate": "2010-01-01T19:23:24Z",
-                    "credentialSubject": {
-                        "given_name": "Fredrik",
-                        "family_name": "Str&#246;mberg",
-                        "birthdate": "1949-01-22"
-                    },
-                    "proof": {
-                        "type": "Ed25519Signature2018",
-                        "created": "2021-03-19T15:30:15Z",
-                        "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..PT8yCqVjj5ZHD0W36zsBQ47oc3El07WGPWaLUuBTOT48IgKI5HDoiFUt9idChT_Zh5s8cF_2cSRWELuD8JQdBw",
-                        "proofPurpose": "assertionMethod",
-                        "verificationMethod": "did:example:issuer#keys-1"
-                    }
-                }
-            ],
-            "id": "ebc6f1c2",
-            "holder": "did:example:holder",
-            "proof": {
-                "type": "Ed25519Signature2018",
-                "created": "2021-03-19T15:30:15Z",
-                "challenge": "n-0S6_WzA2Mj",
-                "domain": "https://client.example.org/cb",
-                "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..GF5Z6TamgNE8QjE3RbiDOj3n_t25_1K7NVWMUASe_OEzQV63GaKdu235MCS3hIYvepcNdQ_ZOKpGNCf0vIAoDA",
-                "proofPurpose": "authentication",
-                "verificationMethod": "did:example:holder#key-1"
-            }
-        }
-    ]
+         }
+      ]
+   },
+   "vp_token":"TBD"
 }
 ```
 
@@ -548,9 +500,9 @@ ToDo: Mention that BLE HW is inherently not secure? securing which is out of sco
         </front>
 </reference>
 
-<reference anchor="Bluetooth.4.Core" target="https://www.bluetooth.com/specifications/specs/core-specification-4-0/">
+<reference anchor="Bluetooth.4.2.Core" target=" https://www.bluetooth.com/specifications/specs/core-specification-4-2/">
         <front>
-          <title>Bluetooth Core Specification 4.0</title>
+          <title>Bluetooth Core Specification 4.2</title>
           <author>
             <organization>Bluetooth SIG, Inc.</organization>
           </author>
