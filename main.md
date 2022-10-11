@@ -52,7 +52,7 @@ organization="MOSIP"
 
 .# Abstract
 
-This document defines how Bluetooth Low Energy (BLE) can be used to request presentation of a verifiable credentials. It uses request and response syntax as defined in [@!OpenID4VP].
+This document defines how Bluetooth Low Energy (BLE) can be used to request presentation of verifiable credentials. It uses request and response syntax as defined in [@!OpenID4VP].
 
 {mainmatter}
 
