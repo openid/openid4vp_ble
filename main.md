@@ -112,7 +112,7 @@ We need to be considerate of the following limitations in BLE stack 4.2
     * The advertisement scan request can not have any custom data.
     * The scan response can have custom data.  
 2. Timing
-    * BLE Scanning and advertising are discrete events, so not every advertisement is received ```(max ~30 sec)``` [TLT: what does the max 30s mean?]
+    * BLE Scanning and advertising are discrete events, so not every advertisement is received (an advertisment is sent for at most 30s) 
 3. Throughput
     * Default MTU size is 23 bytes and max is 512 bytes
     * 14 bytes are overhead cost per packet (MTU).
@@ -161,13 +161,15 @@ First, Verifier and the Wallet need to establish the connection. This specificat
 
 This section describes how Verifier and the Wallet can establish connection by Verifier initiating BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.
 
-(1) Verifier opens it's native application [TLT: why is that important (opening an app and that it is a native app)?]
-(2) Verifiers starts the mode that accepts OpenID4VP.
-(3) Verifier app starts BLE advertisement.
-(4) Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
-(5) Wallet connects to the Verifier.
-(6) Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
-(7) Wallet makes identify request and submits its keys to the verifier in plain text.
+1. Verifier opens it's native application [TLT: why is that important (opening an app and that it is a native app)?]
+2. Verifiers starts the mode that accepts OpenID4VP.
+3. Verifier app starts BLE advertisement. (first half of the verifier's key)
+4. Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
+5. Wallet connects to the Verifier. (second half of the verifiers key in scan response)
+6. Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
+7. Wallet makes identify request and submits its keys to the verifier in plain text (see below). #identify charactiristcis 
+ verifier calculates DHE secret key 
+ single connection at a time
 
 BLE Advertisement Packet structure MUST be the following:
 
@@ -211,6 +213,8 @@ This section describes how Verifier and the Wallet can establish connection by V
 (6) Wallet generates a X25519 keys of its own and combines to create a DHE secret key very similar to the sodium NACL (May be we can choose Signal protocol?). 
 (7) Wallet makes identify request and submits its keys to the verifier in plain text.
 
+ADD data in the QR Code and syntax (content is advertisement, query parameter -> just the Data of the Advertisement Message)
+
 QR code MUST contain the same structure as defined in (#connection-ble), except that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.
 [TLT: putting the QR code means the verifier is required to use the same key for any connection? So we loose the ability to seggragate connections to different wallets or the verifier needs to render a new QR code for every transaction. Think of the security gate again. I would prefer to setup the key in a separate step.]
 
@@ -246,7 +250,7 @@ The following is a non normative example of a request before signing:
    "aud":"wallet_id",
    "nonce":"n-0S6_WzA2Mj",
    "presentation_definition":{
-      "id":"example_jwt_vc",
+      "id":"example",
       "input_descriptors":[
          {
             "id":"id_credential",
@@ -284,21 +288,14 @@ On the BLE layer the response is transmitted by the Wallet submitting the presen
 
 The response contains the parameters as defined in Section 6 of [!@OpenID4VP] in JSON encoding. 
 
-The wallet MAY sign the request. In this case, the response is encoded as a JWT. 
-
-[TLT: is there a kind of transport encryption or is the response object encrypted?]
-
-ToDo: Assume we want to support both sending only VC and VC in a VP?
-[TLT: why should we deviate from OpenID4VP?]
-
-ToDo: Are we limiting signature suites only to X25519?
+The response is encrypted on the session layer using the session key. 
 
 The following is a non normative example of a response before signing:
 
 ```json
 {
    "presentation_submission":{
-      "definition_id":"example_jwt_vc",
+      "definition_id":"example",
       "id":"id_credential",
       "descriptor_map":[
          {
