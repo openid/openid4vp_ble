@@ -168,7 +168,7 @@ The following figure shows the message exchange.
 +------------+                       +-----------+
 ~~~
 
-Pre-requisites: The Verifier has opened it's native application and started the mode that accepts OpenID4VP.
+Pre-requisites: The Verifier has opened it's application and started the mode that accepts OpenID4VP.
 
 1. Verifier app starts BLE advertisement (PDU ADV_IND). (announcing the first half of the verifier's key)
 4. Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
@@ -214,7 +214,7 @@ The following figure shows the message exchange.
 +------------+                       +-----------+
 ~~~
 
-Pre-requisites: The Verifier has opened it's native application and displays a QR Code.
+Pre-requisites: The Verifier has opened it's application and displays a QR Code.
 
 1. Wallet scans the QR Code (Scan_QR_Code), which contains the advertisment data as desribed in (#connection-ble).
 
