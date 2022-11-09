@@ -197,7 +197,7 @@ PDU:
 
 The data in the Advertisement Packet contain the prefix "OPENID4VP" indicating that the verifier is ready to accept connections for OpenID 4 VPs. The rest of the data packet after the "_" contain the first half of its public key (example: 8520f0098930a754748b7ddcb43ef75a) (max. available size 29 byte). 
 
-Note: The remaining half of the key (16 byte of ED25519 - example: 0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
+Note: The remaining half of the key (16 byte of X25519 - example: 0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
 
 ## Estabilishing Connection using QR Code
 
@@ -222,12 +222,9 @@ All other steps are conducted as described in (#connection-ble).
 
 ADD data in the QR Code and syntax (content is advertisement, query parameter -> just the Data of the Advertisement Message)
 
-QR code MUST contain the same structure as defined in (#connection-ble), except that when the QR Code is used to establish connection, entire public key (ED25519 key) is encoded in the QR code.
-[TLT: wouldn't it make implementations easier, if both way would work the same?]
-
 How the Connection Setup Request reaches a Wallet of a user's choice that capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). 
 
-The most certain way for a QR code to reach a target Wallet is to use a camera fature in a Wallet Application itself to scan a QR code.
+The most certain way for a QR code to reach a target Wallet is to use a camera feature in a Wallet Application itself to scan a QR code.
 
 # OpenID4VP Request over BLE
 
