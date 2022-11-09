@@ -173,7 +173,7 @@ Pre-requisites: The Verifier has opened it's application and started the mode th
 1. Verifier app starts BLE advertisement (PDU ADV_IND). (announcing the first half of the verifier's key)
 4. Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
 5. Wallet connects to the Verifier (SCAN_REQ). The second half of the verifiers key is provided in the scan response (SCAN_RESP).
-6. Wallet generates a X25519 keys of its own and combines to create a DHE secret key. 
+6. Wallet generates a X25519 ([@!RFC7748]) keys of its own and combines to create a DHE secret key. 
 7. Wallet makes identify request (IDENTIFY_REQ) and submits its keys to the verifier in plain text (see below). #identify characteristics 
 8. Verifier calculates DHE secret key based on its key and the wallet's key.
 
@@ -197,7 +197,7 @@ PDU:
 
 The data in the Advertisement Packet contain the prefix "OPENID4VP" indicating that the verifier is ready to accept connections for OpenID 4 VPs. The rest of the data packet after the "_" contain the first half of its public key (example: 8520f0098930a754748b7ddcb43ef75a) (max. available size 29 byte). 
 
-Note: The remaining half of the key (16 byte of X25519 - example: 0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
+Note: The remaining half of the key (16 byte of X25519 ([@!RFC7748]) - example: 0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
 
 ## Estabilishing Connection using QR Code
 
