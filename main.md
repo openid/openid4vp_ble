@@ -415,7 +415,7 @@ ToDo: no algorithm identifier since looks like we are doing only X25519?
 
 To calculate the session keys, the Wallet and the Verifier MUST perform ECKA-DH (Elliptic Curve Key Agreement Algorithm – Diffie-Hellman) as defined in BSI TR-03111. The Zab output defined in BSI TR-03111 MUST be used to derive 2 keys. 
 
-The Verifier MUST derive session key using HKDF as defined in [RFC5869] with the following parameters: 
+The Verifier MUST derive session key using HKDF as defined in [@!RFC5869] with the following parameters: 
 
 * Hash: SHA-256 
 * IKM: Zab 
@@ -423,7 +423,7 @@ The Verifier MUST derive session key using HKDF as defined in [RFC5869] with the
 * info: “SKVerifier” (encoded as ASCII string) 
 * L: 32 octets 
 
-The Wallet MUST derive session key using HKDF as defined in [RFC5869] with the following parameters: 
+The Wallet MUST derive session key using HKDF as defined in [@!RFC5869] with the following parameters: 
 
 * Hash: SHA-256 
 * IKM: Zab 
@@ -431,7 +431,7 @@ The Wallet MUST derive session key using HKDF as defined in [RFC5869] with the f
 * info: “SKWallet” (encoded as ASCII string) 
 * L: 32 octets 
 
-For encryption AES-256-GCM (192) (GCM: Galois Counter Mode)  as defined in NIST SP 800-38D or ChaCha20 RFC 8439 MUST be used. 
+For encryption AES-256-GCM (192) (GCM: Galois Counter Mode)  as defined in NIST SP 800-38D or ChaCha20 [@!RFC8439] MUST be used. 
 
 ToDo: Can we do ChaCha20? Rather than AES 256 GCM? The fact that ChaCha20 is more streaming.
 
@@ -452,7 +452,7 @@ Both wallet and the Verifier MUST remove all the information about the session a
 
 To ensure that the Wallet is connected to the correct Verifier. The Wallet may verify the Ident characteristic as described in Clause 8.3.3.1.4. The Ident characteristic value MUST be calculated using the following procedure: 
 
-Use HKDF an defined in RFC 5869 with the following parameters: 
+Use HKDF an defined in [@!RFC5869] with the following parameters: 
 * Hash: SHA-256 
 * IKM: EdeviceKeyBytes (see Clause 9.1.1.4) 
 * salt: (no salt value is provided) 
