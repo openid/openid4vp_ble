@@ -192,10 +192,10 @@ PDU:
         Adv Data: (32 byte)
             Adv Type: Complete Local Name
             flag: "LE General Discoverable Mode", "BR/EDR Not Supported"
-            Data: OPENID4VP_8520f0098930a754748b7ddcb43ef75a (5 bytes + 16 bytes ) Half of the random X25519 public key
+            Data: OVP_STADIONENTRANCE_8520f0098930a754748b7ddcb43ef75a (5 bytes + 16 bytes ) Half of the random X25519 public key
 ```
 
-The data in the Advertisement Packet contain the prefix "OPENID4VP" indicating that the verifier is ready to accept connections for OpenID 4 VPs. The rest of the data packet after the "_" contain the first half of its public key (example: 8520f0098930a754748b7ddcb43ef75a) (max. available size 29 byte). 
+The data in the Advertisement Packet contain the prefix "OVP" indicating that the verifier is ready to accept connections for OpenID 4 VPs. A human readable name of the verifier is given in the next part delimited by a leading and a trailing `-`.  The rest of the data packet after the "_" contain the first half of its public key (example: 8520f0098930a754748b7ddcb43ef75a) (max. available size 29 byte). 
 
 Note: The remaining half of the key (16 byte of X25519 ([@!RFC7748]) - example: 0dbf3a0d26381af4eba4a98eaa9b4e6a) is being sent during the scan response.
 
@@ -222,14 +222,14 @@ All other steps are conducted as described in (#connection-ble).
 
 The data are encoded in an URL as follows:
 
-* custom scheme `OVPBLE`
-* the first 5 characters of the path represent a human readable identifier of the Verifier (RP)
-* the rest of the path contains the first half of the verifier's ephermel X25519 key in base64url encoding (as defined in Section 5 of [@!RFC4648]). 
+The URL starts with the ustom scheme `OVPBLE`. The encoding of the actual data in the URL path basically follows the rules given in (#connection-ble):
+* The first part delimited by a `_` is a human readable identifier of the Verifier (RP)
+* The rest of the path contains the first half of the verifier's ephermel X25519 key in base64url encoding (as defined in Section 5 of [@!RFC4648]). 
 
 Here is an example: 
 
 ```
-OVPBLE://GUCCI8520f0098930a754748b7ddcb43ef75a
+OVPBLE://STADIONENTRANCE_ODUyMGYwMDk4OTMwYTc1NDc0OGI3ZGRjYjQzZWY3NWE
 ```
 
 # OpenID4VP Request over BLE
