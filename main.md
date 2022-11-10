@@ -224,7 +224,7 @@ The data are encoded in an URL as follows:
 
 * custom scheme `OVPBLE`
 * the first 5 characters of the path represent a human readable identifier of the Verifier (RP)
-* the rest of the path contains the first half of the verifier's ephermel X25519 key
+* the rest of the path contains the first half of the verifier's ephermel X25519 key in base64url encoding (as defined in Section 5 of [@!RFC4648]). 
 
 Here is an example: 
 
