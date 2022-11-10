@@ -216,15 +216,21 @@ The following figure shows the message exchange.
 
 Pre-requisites: The Verifier has opened it's application and displays a QR Code.
 
-1. Wallet scans the QR Code (Scan_QR_Code), which contains the advertisment data as desribed in (#connection-ble).
+1. The user scans the QR Code (Scan_QR_Code), typically the wallet app, which contains the advertisment data as described in (#connection-ble).
 
 All other steps are conducted as described in (#connection-ble).
 
-ADD data in the QR Code and syntax (content is advertisement, query parameter -> just the Data of the Advertisement Message)
+The data are encoded in an URL as follows:
 
-How the Connection Setup Request reaches a Wallet of a user's choice that capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). 
+* custom scheme `OVPBLE`
+* the first 5 characters of the path represent a human readable identifier of the Verifier (RP)
+* the rest of the path contains the first half of the verifier's ephermel X25519 key
 
-The most certain way for a QR code to reach a target Wallet is to use a camera feature in a Wallet Application itself to scan a QR code.
+Here is an example: 
+
+```
+OVPBLE://GUCCI8520f0098930a754748b7ddcb43ef75a
+```
 
 # OpenID4VP Request over BLE
 
