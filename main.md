@@ -3,7 +3,7 @@ title = "OpenID for Verifiable Presentations over BLE"
 abbrev = "opendi4vp-offline"
 ipr = "none"
 workgroup = "OpenID Connect"
-keyword = ["security", "openid", "ssi"]
+keyword = ["security", "openid", "ssi", "verifiable credential", "offline"]
 
 [seriesInfo]
 name = "Internet-Draft"
@@ -93,10 +93,6 @@ The protocol consists of the following two steps:
 
 Wallet and the Verifier MUST implement BLE according to the [@!Bluetooth.4.Core] specification . 
 
-Wallet and the Verifier MUST support LE Data Packet Length Extension according to [@!Bluetooth.4.2.Core] section 4.5.10.
-
-Speaking in BLE terms, the Verifier takes the role of the "Peripheral GAP Role" whereas the Wallet takes the "Central GAP Role", i.e. the Verifier advertises the OpenID 4 VP service and the Wallet drives the protocol flow by reading data from and writing data to the Verifier.
-
 During step 1, ephemeral keys to encrypt the session are exchanged. 
 
 Step 2 utilizes request and response syntax as defined in [@!OpenID4VP]. Identification and authentication of Verifier and Wallet can be implemented utilizing the established OpenID mechanisms (e.g. client id). 
@@ -108,7 +104,7 @@ The following limitations in BLE stack 4.2 need to be considerate:
 1. Advertisement
     * The advertisement message can contain only a max. of 29 bytes.
     * The advertisement scan request can not have any custom data.
-    * The scan response can have custom data.  
+    * The scan response can have custom data. 
 2. Timing
     * BLE Scanning and advertising are discrete events, so not every advertisement is received (an advertisment is sent for at most 30s) 
 3. Throughput
@@ -153,6 +149,10 @@ Figure: OpenID4VP over BLE Protocol Flow
 
 First, Verifier and the Wallet need to establish the connection. This specification defines two mechanisms to do so: BLE Advertisement initiated by the Verifier and QR code displayed by the Verifier.
 
+Wallet and the Verifier MUST support LE Data Packet Length Extension according to [@!Bluetooth.4.2.Core] section 4.5.10.
+
+Speaking in BLE terms, the Verifier takes the role of the "Peripheral GAP Role" whereas the Wallet takes the "Central GAP Role", i.e. the Verifier advertises the OpenID 4 VP service and the Wallet drives the protocol flow by reading data from and writing data to the Verifier.
+
 ## Estabilishing Connection using BLE Advertisement {#connection-ble}
 
 This section describes how Verifier and the Wallet can establish a connection by Verifier initiating BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.
@@ -171,11 +171,11 @@ The following figure shows the message exchange.
 Pre-requisites: The Verifier has opened it's application and started the mode that accepts OpenID4VP.
 
 1. Verifier app starts BLE advertisement (PDU ADV_IND). (announcing the first half of the verifier's key)
-4. Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
-5. Wallet connects to the Verifier (SCAN_REQ). The second half of the verifiers key is provided in the scan response (SCAN_RESP).
-6. Wallet generates a X25519 ([@!RFC7748]) keys of its own and combines to create a DHE secret key. 
-7. Wallet makes identify request (IDENTIFY_REQ) and submits its keys to the verifier in plain text (see below). #identify characteristics 
-8. Verifier calculates DHE secret key based on its key and the wallet's key.
+2. Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
+3. Wallet connects to the Verifier (SCAN_REQ). The second half of the verifiers key is provided in the scan response (SCAN_RESP).
+4. Wallet generates a X25519 ([@!RFC7748]) keys of its own and combines to create a DHE secret key. 
+5. Wallet makes identify request (IDENTIFY_REQ) and submits its keys to the verifier in plain text (see below). #identify characteristics 
+6. Verifier calculates DHE secret key based on its key and the wallet's key.
 
 Note: While the Verifier can be active for a long time and process multiple Connections (based on the same Verifier key) subsequently, the Verifier can only accept a single connection at a time.
 
@@ -207,7 +207,7 @@ The following figure shows the message exchange.
 
 ~~~ ascii-art
 +------------+                       +-----------+
-|            |-----Scan_QR_Code----->|           |
+|            |<----Scan_QR_Code------|           |
 | Advertiser |<----SCAN_REQ----------| Scanner   |
 | (Verifier) |-----SCAN_RESP-------->| (Wallet)  |
 |            |<----IDENTIFY_REQ------|           |
