@@ -242,7 +242,7 @@ On the BLE layer, the Wallet reads the following characteristics from the Verifi
 1. Request Size (00000004-5026-444A-9E0E-D6F2450F3A77): used to obtain the size of the presentation request (calculation see below).
 2. Request (00000005-5026-444A-9E0E-D6F2450F3A77): used to obtain the actual JSON payload constituting the presentation request.
 
-The JSON payload is encoded using JWS Compact serialization. The request size is the number of bytes that will be sent over BLE, the size of(JWS) in bytes 
+The JSON payload is encoded using JWS Compact serialization. The request size is the number of bytes that will be sent over BLE, the size of (JWS) in bytes 
 
 Note: All payload is encrypted on the BLE layer using the session key determined as defined above. 
 
