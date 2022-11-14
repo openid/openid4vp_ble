@@ -171,7 +171,7 @@ The following figure shows the message exchange.
 Pre-requisites: The Verifier has opened it's application and started the mode that accepts OpenID4VP.
 
 1. Verifier app starts BLE advertisement (PDU ADV_IND). (announcing the first half of the verifier's key)
-4. Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
+4. Wallet scans the BLE layer and filters the Verifier supporting OpenID4VP automatically, in case it found only one. If there are multiple verifiers, the user is asked to choose. 
 5. Wallet connects to the Verifier (SCAN_REQ). The second half of the verifiers key is provided in the scan response (SCAN_RESP).
 6. Wallet generates a X25519 ([@!RFC7748]) keys of its own and combines to create a DHE secret key. 
 7. Wallet makes identify request (IDENTIFY_REQ) and submits its keys to the verifier in plain text (see below). #identify characteristics 
