@@ -222,7 +222,7 @@ All other steps are conducted as described in (#connection-ble).
 
 The data are encoded in an URL as follows:
 
-The URL starts with the ustom scheme `OVPBLE`. The encoding of the actual data in the URL path basically follows the rules given in (#connection-ble):
+The URL starts with the ustom scheme `OVPBLE`. The encoding of the actual data in the URL path follows the same rules given in (#connection-ble):
 
 * The first part delimited by a "_" is a human readable identifier of the Verifier (RP)
 * The rest of the path contains the first half of the verifier's ephemeral X25519 key in base64url encoding (as defined in Section 5 of [@!RFC4648]). 
