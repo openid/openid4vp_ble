@@ -244,7 +244,7 @@ On the BLE layer, the Wallet reads the following characteristics from the Verifi
 
 The JSON payload is encoded using JWS Compact serialization. The request size is the number of bytes that will be sent over BLE, the size of (JWS) in bytes 
 
-Note: All payload is encrypted on the BLE layer using the session key determined as defined above. 
+Note: Entire payload is encrypted on the BLE layer using the session key determined as defined above. 
 
 ## Payload
 
