@@ -259,7 +259,7 @@ parameter is present.
 * `nonce`: REQUIRED. This value is used to securely bind the verifiable presentation(s) provided by the wallet to the particular transaction.  
 * `aud`: OPTIONAL. This value identifies the wallet issuer (as intended recipient of the presentation request). 
 
-NOTE: The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
+The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
 
 The following is a non normative example of a request before signing:
 
