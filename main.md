@@ -251,7 +251,7 @@ Note: Entire payload is encrypted on the BLE layer using the session key determi
 The Request (00000005-5026-444A-9E0E-D6F2450F3A77) contains a signed request object containing the parameters as defined in [@!OpenID4VP].
 
 The following request parameters are supported by this specification:
-* `iss`: REQUIRED. MUST contain the verifier's client id.  
+* `iss`: REQUIRED. MUST contain the verifier's client_id.  
 * `presentation_definition`: CONDITIONAL. contains the verifier's requirements regarding verifiable credentials it wants to obtain from the wallet. 
 MUST not be present if a 'scope' parameter is present. 
 * `scope`: CONDITIONAL. The scope value MUST represent a credential presentation request. This parameter MUST NOT be present if a `presentation_definition`
