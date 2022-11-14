@@ -222,7 +222,7 @@ All other steps are conducted as described in (#connection-ble).
 
 The data are encoded in an URL as follows:
 
-The URL starts with the ustom scheme `OVPBLE`. The encoding of the actual data in the URL path basically follows the rules given in (#connection-ble):
+The URL starts with the ustom scheme `OVPBLE`. The encoding of the actual data in the URL path follows the same rules given in (#connection-ble):
 
 * The first part delimited by a "_" is a human readable identifier of the Verifier (RP)
 * The rest of the path contains the first half of the verifier's ephemeral X25519 key in base64url encoding (as defined in Section 5 of [@!RFC4648]). 
@@ -242,16 +242,16 @@ On the BLE layer, the Wallet reads the following characteristics from the Verifi
 1. Request Size (00000004-5026-444A-9E0E-D6F2450F3A77): used to obtain the size of the presentation request (calculation see below).
 2. Request (00000005-5026-444A-9E0E-D6F2450F3A77): used to obtain the actual JSON payload constituting the presentation request.
 
-The JSON payload is encoded using JWS Compact serialization. The request size is the number of bytes that will be sent over BLE, the size of(JWS) in bytes 
+The JSON payload is encoded using JWS Compact serialization. The request size is the number of bytes that will be sent over BLE, the size of (JWS) in bytes 
 
-Note: All payload is encrypted on the BLE layer using the session key determined as defined above. 
+Note: Entire payload is encrypted on the BLE layer using the session key determined as defined above. 
 
 ## Payload
 
 The Request (00000005-5026-444A-9E0E-D6F2450F3A77) contains a signed request object containing the parameters as defined in [@!OpenID4VP].
 
 The following request parameters are supported by this specification:
-* `iss`: REQUIRED. MUST contain the verifier's client id.  
+* `iss`: REQUIRED. MUST contain the verifier's client_id.  
 * `presentation_definition`: CONDITIONAL. contains the verifier's requirements regarding verifiable credentials it wants to obtain from the wallet. 
 MUST not be present if a 'scope' parameter is present. 
 * `scope`: CONDITIONAL. The scope value MUST represent a credential presentation request. This parameter MUST NOT be present if a `presentation_definition`
@@ -259,7 +259,7 @@ parameter is present.
 * `nonce`: REQUIRED. This value is used to securely bind the verifiable presentation(s) provided by the wallet to the particular transaction.  
 * `aud`: OPTIONAL. This value identifies the wallet issuer (as intended recipient of the presentation request). 
 
-NOTE: The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
+The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
 
 The following is a non normative example of a request before signing:
 
