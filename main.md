@@ -62,29 +62,19 @@ This document enables Wallets and the Verifiers who have implemented [@!OpenID4V
 
 # Terms and Definitions
 
-verifiable credential
-wallet
-the Verifier
-
-//WIP
-
-ToDo: "Connection" or "Session"?
+This draft uses the terms and definitions from [@!OpenID4VP], section 2. 
 
 # Use Cases
 
-## Use Case when only wallet is offline
+## Admission control at a venue 
 
-## Use Case when only the Verifier is offline
-
-## Use Case when both wallet and the Verifier are offline
-
-# Scope
-
-//WIP
+The user needs to present her electronic ticket (represented by a verifiable credentioal) when entering a venue. She opens her wallet and authenticates towards the wallet. She then scans the QR code at the entrance with her wallet. The wallet determines the credential (the ticket) required by the verifier and asks for consent to share the respective credential. The credential is then transmitted to the verifier, which, after validation, allows her to enter the venue, e.g. by opening the turnstile.  
 
 # Overview 
 
-The protocol consists of the following two steps:
+This specification supports deployments, where the Verifier or the Wallet or both parties do not have an Internet connection or where use of an Internet connection is not desired.
+
+The protocol consists of the following steps:
 
 1. Establishing a BLE connection
 2. Verifying the parties
@@ -170,11 +160,11 @@ The following figure shows the message exchange.
 
 Pre-requisites: The Verifier has opened it's application and started the mode that accepts OpenID4VP.
 
-1. Verifier app starts BLE advertisement (PDU ADV_IND). (announcing the first half of the verifier's key)
+1. Verifier app starts BLE advertisement (`PDU ADV_IND`). (announcing the first half of the verifier's key)
 2. Wallet scans the BLE layer and filters the OpenID4VP automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
-3. Wallet connects to the Verifier (SCAN_REQ). The second half of the verifiers key is provided in the scan response (SCAN_RESP).
+3. Wallet connects to the Verifier (`SCAN_REQ`). The second half of the verifiers key is provided in the scan response (`SCAN_RESP`).
 4. Wallet generates a X25519 ([@!RFC7748]) keys of its own and combines to create a DHE secret key. 
-5. Wallet makes identify request (IDENTIFY_REQ) and submits its keys to the verifier in plain text (see below). #identify characteristics 
+5. Wallet makes identify request (`IDENTIFY_REQ`) and submits its keys to the verifier in plain text (see below). #identify characteristics 
 6. Verifier calculates DHE secret key based on its key and the wallet's key.
 
 Note: While the Verifier can be active for a long time and process multiple Connections (based on the same Verifier key) subsequently, the Verifier can only accept a single connection at a time.
@@ -216,7 +206,7 @@ The following figure shows the message exchange.
 
 Pre-requisites: The Verifier has opened it's application and displays a QR Code.
 
-1. The user scans the QR Code (Scan_QR_Code), typically the wallet app, which contains the advertisment data as described in (#connection-ble).
+1. The user scans the QR Code (`Scan_QR_Code`), typically the wallet app, which contains the advertisment data as described in (#connection-ble).
 
 All other steps are conducted as described in (#connection-ble).
 
@@ -251,13 +241,13 @@ Note: Entire payload is encrypted on the BLE layer using the session key determi
 The Request (00000005-5026-444A-9E0E-D6F2450F3A77) contains a signed request object containing the parameters as defined in [@!OpenID4VP].
 
 The following request parameters are supported by this specification:
-* `iss`: REQUIRED. MUST contain the verifier's client_id.  
-* `presentation_definition`: CONDITIONAL. contains the verifier's requirements regarding verifiable credentials it wants to obtain from the wallet. 
-MUST not be present if a 'scope' parameter is present. 
-* `scope`: CONDITIONAL. The scope value MUST represent a credential presentation request. This parameter MUST NOT be present if a `presentation_definition`
-parameter is present. 
-* `nonce`: REQUIRED. This value is used to securely bind the verifiable presentation(s) provided by the wallet to the particular transaction.  
-* `aud`: OPTIONAL. This value identifies the wallet issuer (as intended recipient of the presentation request). 
+
+* `iss`: REQUIRED. MUST contain the verifier's client_id.
+* `presentation_definition`: CONDITIONAL. contains the verifier's requirements regarding verifiable credentials it wants to obtain from the wallet.
+MUST not be present if a 'scope' parameter is present.
+* `scope`: CONDITIONAL. The scope value MUST represent a credential presentation request. This parameter MUST NOT be present if a `presentation_definition` parameter is present. 
+* `nonce`: REQUIRED. This value is used to securely bind the verifiable presentation(s) provided by the wallet to the particular transaction.
+* `aud`: OPTIONAL. This value identifies the wallet issuer (as intended recipient of the presentation request).
 
 The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
 
@@ -470,22 +460,13 @@ If the Ident characteristic received from the Verifier does not match the expect
 
 NOTE The purpose of the Ident characteristic is only to verify whether the Wallet is connected to the correct Verifier before setting starting OpenID4VP Request. If the Wallet is connected to the wrong Verifier, session establishment will fail. Connecting and disconnecting to an Verifier takes a relatively large amount of time and it is therefore fastest to implement methods to identify the correct Verifier to connect to and not to rely purely on the Ident characteristic to identify the correct Verifier. 
 
-
 ## Verifier Authentication
 
-How does the wallet authenticate the Verifier?
+How does the wallet authenticate the Verifier? The verifier signs the presentation request. 
 
 ## Session Binding
 
-How does the Verifier know a particular response is tied to a particular request?
-
-## Other
-
-ToDo: Mention that BLE HW is inherently not secure? securing which is out of scope of this protocol?
-
-# Discussion points
- 
-- not requiring nor recommending BLE secure connections.
+How does the Verifier know a particular response is tied to a particular request? It evaluates the nonce and aud value of the presentation to match the nonce of the request and its client id. 
 
 {backmatter}
 
