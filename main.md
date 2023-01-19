@@ -543,8 +543,7 @@ The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input
 
 ## Session Information
 
-Wallet MUST remove all the information about the session after its termination. Verifier might choose to do so based on their mode of operation.
-
+Both wallet and the Verifier MUST remove all the information about the session after its termination.
 
 ## Verifier Authentication
 
