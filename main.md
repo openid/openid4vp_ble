@@ -87,7 +87,7 @@ Step 1: Ephemeral keys to encrypt the session are exchanged.
 
 Step 2: Utilizes request and response syntax as defined in [@!OpenID4VP]. Identification and authentication of Verifier and Wallet can be implemented utilizing the established OpenID mechanisms (e.g. client id) or ```did``` . 
 
-Step 3: Exchange VC and verify the same.
+Step 3: Exchange VC and verify it.
 
 Step 4: Disconnect
 
