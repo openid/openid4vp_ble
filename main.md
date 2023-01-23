@@ -426,6 +426,8 @@ Presentation Response MUST include `presentation_submission` and `vp_token` para
     ] 
 }
 
+**Note:** The actual content can be a gzip [@!RFC1952]. Use the ID2 as per [@!RFC1952] to determine the gzip format. 
+
 ## Stream Write Packet Structure
 
 Using the 'Content Size' characteristics the wallet sets the size. Once we receive the confirmation about the write we start the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.
