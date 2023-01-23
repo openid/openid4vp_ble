@@ -351,7 +351,7 @@ TODO: Can we plan to register our service with Bluetooth SIG? This will allow us
 
 ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.
 
-ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
+ToDo: Check if there are conventions to the UUID. Current UUID has been randomly generated.
 
 ## Stream Write Packet Structure
 
@@ -416,18 +416,18 @@ To calculate the session keys, the Wallet and the Verifier MUST perform ECKA-DH 
 The Verifier MUST derive session key using HKDF as defined in [@!RFC5869] with the following parameters: 
 
 * Hash: SHA-256 
-* IKM: Zab 
-* salt: SHA-256
-* info: “SKVerifier” (encoded as ASCII string) 
-* L: 32 octets 
+* IKM: Zab // discuss
+* salt: SHA-256(???) // discuss
+* info: “OpenID4VPVerifier” (encoded as ASCII string) 
+* L: 32 octets // discuss
 
 The Wallet MUST derive session key using HKDF as defined in [@!RFC5869] with the following parameters: 
 
 * Hash: SHA-256 
-* IKM: Zab 
-* salt: SHA-256
-* info: “SKWallet” (encoded as ASCII string) 
-* L: 32 octets 
+* IKM: Zab // discuss 
+* salt: SHA-256(???) // discuss
+* info: “OpenID4VPWallet” (encoded as ASCII string) 
+* L: 32 octets // discuss
 
 For encryption AES-256-GCM (192) (GCM: Galois Counter Mode)  as defined in NIST SP 800-38D or ChaCha20 [@!RFC8439] MUST be used. 
 

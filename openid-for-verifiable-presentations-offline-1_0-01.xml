@@ -83,6 +83,40 @@ the Verifier</t>
 <t>Step 2 utilizes request and response syntax defined in [OpenID4VP] specification. Response type <tt>vp_token</tt> MUST be used to obtain the VP Token in Authorization Response.</t>
 </section>
 
+<section anchor="limitation"><name>Limitation</name>
+<t>We need to be considerate of the following limitations in BLE stack 4.2</t>
+
+<ol>
+<li><t>Advertisement</t>
+
+<ul>
+<li><t>The advertisement message can contain only a max of 29 bytes.</t>
+</li>
+<li><t>The advertisement scan request can not have any custom data.</t>
+</li>
+<li><t>The scan response can have custom data.<br />
+</t>
+</li>
+</ul></li>
+<li><t>Timing</t>
+
+<ul>
+<li><t>BLE Scanning and advertising are discrete events, so not every advertisement is received <tt>(max ~30 sec)</tt></t>
+</li>
+</ul></li>
+<li><t>Throughput</t>
+
+<ul>
+<li><t>Default MTU size is 23 bytes and max is 512 bytes</t>
+</li>
+<li><t>14 bytes are overhead cost per packet (MTU).</t>
+</li>
+<li><t>0.226 ~ 0.301 Mbps (Mega bits per second). So data rate of ~0.10 Mbps</t>
+</li>
+</ul></li>
+</ol>
+</section>
+
 <section anchor="protocol-flow-overview"><name>Protocol Flow Overview</name>
 <t>Below is the diagram that illustrates protocol flow:</t>
 <figure><name>OpenID4VP over BLE Protocol Flow
@@ -108,11 +142,19 @@ the Verifier</t>
 +-------------+          &amp; Close connection             +----------------+
 </sourcecode>
 </figure>
-<t>(1) Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.
-(2) Wallet obtains Presentation Request from the Verifier.
-(3) Wallet authenticates the user and obtains consent to share Credential(s) with the Verifier.
-(4) Wallet sends Presentation Response to the Verifier with Verifiable Presntation(s).
-(5) Verifier and the Wallet close connection.</t>
+
+<ol>
+<li><t>Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.</t>
+</li>
+<li><t>Wallet obtains Presentation Request from the Verifier.</t>
+</li>
+<li><t>Wallet authenticates the user and obtains consent to share Credential(s) with the Verifier.</t>
+</li>
+<li><t>Wallet sends Presentation Response to the Verifier with Verifiable Presntation(s).</t>
+</li>
+<li><t>Verifier and the Wallet close connection.</t>
+</li>
+</ol>
 </section>
 
 <section anchor="connection-set-up"><name>Connection Set up</name>
@@ -184,12 +226,19 @@ Step 7: Both the wallet and client records in their respective audit logs.</t>
 <tr>
 <th>Characteristic name</th>
 <th>UUID</th>
-<th>Mandatory properties</th>
+<th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 
 <tbody>
+<tr>
+<td>Request Size</td>
+<td>00000004-5026-444A-9E0E-D6F2450F3A77</td>
+<td>Read</td>
+<td>Get the request size</td>
+</tr>
+
 <tr>
 <td>Request</td>
 <td>00000005-5026-444A-9E0E-D6F2450F3A77</td>
@@ -205,16 +254,37 @@ Step 7: Both the wallet and client records in their respective audit logs.</t>
 </tr>
 
 <tr>
-<td>Submit VC</td>
+<td></td>
+<td></td>
+<td></td>
+<td>as chunks</td>
+</tr>
+
+<tr>
+<td>Content Size</td>
 <td>00000007-5026-444A-9E0E-D6F2450F3A77</td>
 <td>Write</td>
-<td>Submit the VC</td>
+<td>Submit the content</td>
+</tr>
+
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>size</td>
+</tr>
+
+<tr>
+<td>Submit VC</td>
+<td>00000008-5026-444A-9E0E-D6F2450F3A77</td>
+<td>Write</td>
+<td>VC stream as chunks</td>
 </tr>
 </tbody>
 </table><t>+--------------------+--------------------------------------+-----------------------+---------------------+</t>
 <t>TODO: Can we plan to register our service with Bluetooth SIG? This will allow us to have</t>
 <t>ToDo: If 'Submit VC' latency is high due to the presence of a photograph we will fall back to the style that Kritina wrote with State.</t>
-<t>ToDo: Check if there are conventions to the UUID. Original in ISO is <tt>00000001-A123-48CE-896B-4C76973373E6</tt>.</t>
+<t>ToDo: Check if there are conventions to the UUID. Current UUID has been randomly generated.</t>
 </section>
 
 <section anchor="identity-request"><name>Identity Request</name>
@@ -229,6 +299,32 @@ Step 7: Both the wallet and client records in their respective audit logs.</t>
 
 <section anchor="presentation-response"><name>Presentation Response</name>
 <t>Presentation Response MUST include <tt>presentation_submission</tt> and <tt>vp_token</tt> parameters as defined in Section 6 of [OpenID4VP].</t>
+<t>{
+    &quot;presentation_submission&quot;: {</t>
+
+<artwork>},
+&quot;vp_token&quot;: [
+    {
+        VP1
+    },
+    {
+        VP2
+    }
+] 
+</artwork>
+<t>}</t>
+</section>
+
+<section anchor="stream-write-packet-structure"><name>Stream Write Packet Structure</name>
+<t>Using the 'Content Size' characteristics the wallet sets the size. Once we receive the confirmation about the write we start the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.</t>
+<t><strong>NOTE</strong>: Limit the total size to <tt>~4kb</tt> for better performance while the protocol can handle larger. In case the Request does not match Size then its assumed its corrupted and the same procedure is repeated again.</t>
+<t>Clarify the error handing rationale</t>
+</section>
+
+<section anchor="stream-read-packet-structure"><name>Stream Read Packet Structure</name>
+<t>The <tt>Request Size</tt> is first called to get the actual size of the request. Once the size of the request is obtained the <tt>Request</tt> characteristics is called to get the actual data. The characteristics is called repeatedly until all the requested data is received.</t>
+<t>To read the complete Characteristic Value an ATT<em>READ</em>REQ PDU should be used for the first part of the value and ATT<em>READ</em>BLOB<em>REQ PDUs shall used for the rest. The Value Offset parameter of each ATT</em>READ<em>BLOB</em>REQ PDU shall be set to the offset of the next octet within the Characteristic Value that has yet to be read. The ATT<em>READ</em>BLOB<em>REQ PDU is repeated until the ATT</em>READ<em>BLOB</em>RSP PDU’s Part Attribute Value parameter is shorter than (ATT_MTU – 1).</t>
+<t><strong>NOTE</strong>: In case the Request does not match Size then its assumed its corrupted and the same procedure is repeated again.</t>
 </section>
 
 <section anchor="connection-closure"><name>Connection closure</name>
@@ -259,7 +355,7 @@ Step 7: Both the wallet and client records in their respective audit logs.</t>
 <li><t>Closure of the communication channel used for data retrieval.</t>
 </li>
 </ul>
-<t>[SASI] TODO: Should we support multiple encryption type or pick the signal route?</t>
+<t>[SASI] TODO: Should we support multiple encryption type or pick the single encryption route?</t>
 </section>
 </section>
 
@@ -315,13 +411,12 @@ Step 7: Both the wallet and client records in their respective audit logs.</t>
 <li><t>L: 32 octets</t>
 </li>
 </ul>
-<t>For encryption AES-256-GCM (192) or ChaCha20 (GCM: Galois Counter Mode) as defined in NIST SP 800-38D MUST be used.</t>
+<t>For encryption AES-256-GCM (192) (GCM: Galois Counter Mode)  as defined in NIST SP 800-38D or ChaCha20 RFC 8439 MUST be used.</t>
 <t>ToDo: Can we do ChaCha20? Rather than AES 256 GCM? The fact that ChaCha20 is more streaming.</t>
 <t>The IV (Initialization Vector defined in NIST SP 800-38D) used for encryption MUST have the default length of 12 bytes for GCM, as specified in NIST SP 800-38D. The IV MUST be the concatenation of the identifier and the message counter (identifier || message counter). The identifier MUST be an 8-byte value.</t>
 <t>The Verifier MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00.
 The Wallet MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x01.</t>
 <t>The Wallet and Verifier MUST keep a separate message counter for each session key. The message counter value MUST be a 4-byte big-endian unsigned integer. For the first encryption with a session key, the message counter MUST be set to 1. Before each following encryption with the same key, the message counter value MUST be increased by 1. A message counter value MUST never be reused in any future encryption using the same key. The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input for the GCM function MUST be an empty string. The plaintext used as input for the GCM function MUST be Wallet request or Wallet response. The value of the data element in the session establishment and session data messages as defined in 9.1.1.4 MUST be the concatenation of the ciphertext and all 16 bytes of the authentication tag (ciphertext || authentication tag).</t>
-<t>ToDo: Need to pharaphrase, currently text borrowed from ISO.</t>
 </section>
 </section>
 
@@ -341,7 +436,6 @@ The Wallet MUST use the following identifier: 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 * L: 16 octets
 If the Ident characteristic received from the Verifier does not match the expected value, the Wallet MUST disconnect from the Verifier.</t>
 <t>NOTE The purpose of the Ident characteristic is only to verify whether the Wallet is connected to the correct Verifier before setting starting OpenID4VP Request. If the Wallet is connected to the wrong Verifier, session establishment will fail. Connecting and disconnecting to an Verifier takes a relatively large amount of time and it is therefore fastest to implement methods to identify the correct Verifier to connect to and not to rely purely on the Ident characteristic to identify the correct Verifier.</t>
-<t>ToDo: Need to pharaphrase, currently text borrowed from ISO.</t>
 </section>
 
 <section anchor="verifier-authentication"><name>Verifier Authentication</name>
