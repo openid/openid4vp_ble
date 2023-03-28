@@ -243,7 +243,7 @@ OPENID4VP://connect?name=STADONENTRY&key=8520f0098930a754748b7ddcb43ef75a0dbf3a0
 
 The URL starts with the custom scheme `OPENID4VP`. The key contains the verifier's ephemeral X25519 key in hex encoding (as defined in Section 5 of [@!RFC4648]). 
 
-How the connection setup request reaches a Wallet of a user's choice thats capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). The most certain way for a QR code to reach a target Wallet is to use a camera feature in a Wallet Application itself to scan a QR code.
+Custom URL scheme is used here so the connection setup request reaches a Wallet of a user's choice thats capable of handling the request.
 
 # OpenID4VP Request over BLE {#identify-request}
 
