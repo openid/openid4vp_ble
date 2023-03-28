@@ -179,7 +179,7 @@ Pre-requisites: The Verifier has opened it's application and started the mode th
 2. Wallet scans the BLE layer and filters the `OVP` automatically (in case it found only one). If there are multiple verifiers the user is asked to choose, alternatively use [QR Code](#connection-scan-qr-ble). 
 3. Wallet connects to the Verifier (`SCAN_REQ`). The second 27 byte of the verifiers key is provided in the scan response (`SCAN_RESP`).
 4. Wallet generates a X25519 ([@!RFC7748]) key pair of its own and combines to create a DHE secret key(#encryption). 
-5. Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-request) 
+5. Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-ble-request) 
 6. Verifier calculates DHE secret key based on its key pair and the wallet's public key.
 
 __Note:__ While the Verifier can be active for a long time and process multiple connections (based on the same Verifier key).
@@ -235,10 +235,10 @@ Pre-requisites: The Verifier has opened it's application and displays a QR Code.
 1. The user scans the QR Code (`Scan_QR_Code`) using the wallet app. Sample QR Code as below.
 
 ```
-OPENID4VP://connect?name=STADIONENTRANCE&key=8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a 
+OPENID4VP://connect?name=STADONENTRY&key=8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a 
 ```
 2. Wallet generates a X25519 ([@!RFC7748]) key pair of its own and combines to create a DHE [secret key](#encryption). 
-3. Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-request) 
+3. Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-ble-request) 
 4. Verifier calculates DHE secret key based on its key pair and the wallet's public key.
 
 The URL starts with the custom scheme `OPENID4VP`. The key contains the verifier's ephemeral X25519 key in hex encoding (as defined in Section 5 of [@!RFC4648]). 
