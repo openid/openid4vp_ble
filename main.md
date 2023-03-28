@@ -36,14 +36,14 @@ organization="Panasonic"
 
 [[author]]
 initials="G."
-fullname="Sasikumar"
+fullname="Sasikumar Ganesan"
 organization="MOSIP"
     [author.address]
     email = "sasi@mosip.io"
 
 [[author]]
 initials="N."
-fullname="Ramesh"
+fullname="Ramesh Narayanan"
 organization="MOSIP"
     [author.address]
     email = "ramesh@mosip.io"
@@ -81,22 +81,14 @@ The protocol consists of the following steps:
 3. Exchanging verifiable credentials
 4. Finalizing the exchange
 
-Wallet and the Verifier MUST implement BLE according to the [@!Bluetooth.4.2.Core] specification . 
-
-Step 1: Ephemeral keys to encrypt the session are exchanged. 
-
-Step 2: Utilizes request and response syntax as defined in [@!OpenID4VP]. Identification and authentication of Verifier and Wallet can be implemented utilizing the established OpenID mechanisms (e.g. client id) or ```did``` . 
-
-Step 3: Exchange VC and verify it.
-
-Step 4: Disconnect
+Wallet and the Verifier MUST implement BLE according to the [@!Bluetooth.4.2.Core] specification. 
 
 # Limitation
 
 The following limitations in BLE stack 4.2 need to be considerate: 
 
 1. Advertisement
-    * The advertisement message can contain only a max. of 29 bytes.
+    * The advertisement message can contain only a max. of 23 bytes & 27 bytes in response.
     * The advertisement scan request can not have any custom data.
     * The scan response can have custom data. 
 2. Timing
@@ -116,23 +108,27 @@ Below is the diagram that illustrates protocol flow:
 |             |<---- (1) Connection setup request ------|                |
 |             |          using QR code or discovery     |                |
 |             |                                         |                |
-|             |----- (2) OpenID4VP Request over BLE --->|                |
+|             |<---- (2) Wallet provides its -----------|                |
+|             |          identifiers to the verifier    |                |
+|             |                                         |                |
+|             |                                         |                |
+|             |----- (3) OpenID4VP Request over BLE --->|                |
 |             |          verify the requester           |                |
 |             |       +----------+                      |                |
 |             |       |          |                      |                |
 |             |       | End-User |                      |                |
-| Verifier    |       |          |<- (3) AuthN & AuthZ->|     Wallet     |
+| Verifier    |       |          |<- (4) AuthN & AuthZ->|     Wallet     |
 | (Peripheral |       |          |                      | (Central GAP   |
 |  GAP Role,  |       +----------+                      |  Role,         |
 |  Server)    |                                         |  Client)       |
-|             |<---- (4) OpenID4VP Response over BLE ---|                |
+|             |<---- (5) OpenID4VP Response over BLE ---|                |
 |             |      (verifiable presentation as chunk) |                |
 |             |                                         |                |
-|             |<---- (5) Transfer Summary Request ------|                |
+|             |<---- (6) Transfer Summary Request ------|                |
 |             |                                         |                |
-|             |----- (6) Send Transfer Report---------->| (Repeat 4-6    |
+|             |----- (7) Send Transfer Report---------->| (Repeat 4-6    |
 |             |                                         | in case of     |
-|             |<----- (7) Finalize the exchange --------| error)         |
+|             |<---- (8) Finalize the exchange ---------| error)         |
 +-------------+          & Close connection             +----------------+
 ~~~
 Figure: OpenID4VP over BLE Protocol Flow
@@ -141,29 +137,18 @@ Note: The arrow mark indicates a read or write by the wallet.
 -> Read by wallet
 <- Write by wallet
 
-1. Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier.
-2. Wallet obtains the Presentation Request from the Verifier.
-3. Wallet authenticates the user and obtains consent to share Credential(s) with the Verifier.
-4. Wallet sends the Presentation Response to the Verifier containing Verifiable Presntation(s).
-5. Wallet requests the Verifier for the transfer summary report.
-6. Verifier sends transfer report (in case of error the steps 4-6 will be repeated) to Wallet. 
-7. Verifier and the Wallet close connection.
+1. Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier
 
-## Details
-
-Wallet MUST support the Central role and is responsible for connecting to the Verifier. The Verifier MUST support the Peripheral Role and should advertise its details. After the connection is established, the Wallet has the peripheral details and X25519 keys of the verifier. The sequence of flow is as described.
-
-Step 1: Wallet generates a X25519 keys of its own and a random 8 byte nonce, combines to create a DHE secret key. The 16 byte nonce are ordered with first 8byte from the verifier and the second 8 byte from the wallet.
-Step 2: Wallet makes identify request and submits its keys & nonce to the verifier in plain text.
-Step 3: Wallet reads the Presentation request from the Verifier. (Encrypted with the secret key)
-Step 4: Wallet authenticates the User and obtains consent
-Step 5: Wallet submits the VC to the Verifier.
-Step 6: Wallet requests the transfer summary.
-Step 8: Verifier sends the transfer summary report.
-Step 9: If error Wallet follows to send the missing chunk (Step 5-9). If success moves to Step 7
-Step 7: The verifier accepts the VC if they could decrypt and validate the signature.
-Step 8: Both the wallet and client records in their respective audit logs.
-
+   * Upon QR code scan Wallet generates an X25519 ephemeral keys of its own.
+   * The QR Code contains the verifier's ephemeral key.
+   * Secret key is created as defined in the (#encryption) section. 
+2. Wallet sends its identification information to the verifier. 
+3. Wallet reads the Presentation Request from the Verifier.
+4. Wallet authenticates the user and obtains consent to share the Credential(s) with the Verifier.
+5. Wallet sends the Presentation Response to the Verifier containing Verifiable Presntation(s).
+6. Wallet requests the Verifier for the transfer summary report.
+7. Verifier notifies transfer report (in case of error the steps 4 - 7 will be repeated) to Wallet. 
+8. Wallet closes connection.
 
 # Connection Set up {#connection-set-up}
 
@@ -190,14 +175,14 @@ The following figure shows the message exchange.
 
 Pre-requisites: The Verifier has opened it's application and started the mode that accepts OpenID4VP.
 
-1. Verifier app starts BLE advertisement (`PDU ADV_IND`). (announcing the first 16 bytes of the verifier's key)
-2. Wallet scans the BLE layer and filters the `OVP` automatically (in case it found only one). If there are multiple verifiers the user is asked to choose. 
-3. Wallet connects to the Verifier (`SCAN_REQ`). The second 16 byte of the verifiers key is provided in the scan response (`SCAN_RESP`).
-4. Wallet generates a X25519 ([@!RFC7748]) key pair of its own and combines to create a DHE secret key. 
-5. Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text (see below). #identify characteristics 
+1. Verifier app starts BLE advertisement (`PDU ADV_IND`). (announcing the first 5 bytes of the verifier's key)
+2. Wallet scans the BLE layer and filters the `OVP` automatically (in case it found only one). If there are multiple verifiers the user is asked to choose, alternatively use [QR Code](#connection-scan-qr-ble). 
+3. Wallet connects to the Verifier (`SCAN_REQ`). The second 27 byte of the verifiers key is provided in the scan response (`SCAN_RESP`).
+4. Wallet generates a X25519 ([@!RFC7748]) key pair of its own and combines to create a DHE secret key(#encryption). 
+5. Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-request) 
 6. Verifier calculates DHE secret key based on its key pair and the wallet's public key.
 
-__Note:__ While the Verifier can be active for a long time and process multiple Connections (based on the same Verifier key) subsequently, the Verifier can only accept a single connection at a time.
+__Note:__ While the Verifier can be active for a long time and process multiple connections (based on the same Verifier key).
 
 __Note:__ Its expected that the range of the verifiers advertisement is limited based on the applications requirement. Verifiers are expected to provide the necessary controls to limit the range.
 
@@ -209,19 +194,26 @@ PDU:
         PDU type: ADV_IND
         Tx Address: Random
         Rx Address: Random
-    Payload: (37 bytes)
+    Payload: (25 bytes)
         Adv Address: Random address
-        Adv Data: (32 byte)
+        Adv Data: (17 byte)
             Adv Type: Complete Local Name
             flag: "LE General Discoverable Mode", "BR/EDR Not Supported"
-            Data: OVPSTADIONENTRANCE_8520f0098930a754748b (3 character + 15 character identifier name + 10 bytes ) 10 bytes of the random X25519 public key
+            Data: OVPSTADONENTRY_8520f00989 (3 character + 11 character identifier name + 5 bytes of the random X25519 public key)
 ```
 
-The data in the Advertisement Packet contain the prefix "OVP" indicating that the verifier is ready to accept connections for OpenID 4 VPs. A human readable name of the verifier is given in the next part delimited by a trailing "_".  The rest of the data packet after the "_" contain the first 10 bytes of the public key (example: 8520f0098930a754748b) (max. available size 29 byte). 
+The data in the Advertisement Packet contain the prefix "OVP" indicating that the verifier is ready to accept connections for OpenID 4 VPs. A human readable name of the verifier is given in the next part.  The rest of the data packet after the "_" contain the first 5 bytes of the public key (example: 8520f00989) (max. available size 20 byte). 
 
-BLE Advertisement -  OPENID4VP, first 10 byte of X25519 ([@!RFC7748] public key (max available size 29 byte), Response to the scan will send the remaining 22 byte of X25519 (7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a) and 8 byte random nonce, 
+The Scan Response structure MUST be the following:
 
-__Note:__ The SCAN_RESP has a special service UUID. This is to ensure support for IOS.
+```
+Payload: (31 bytes)
+        Adv Address: Random address
+        Adv Data: (31 byte)
+            Data: 30a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a
+```
+
+__Note:__ The `SCAN_RESP` has a special service UUID. This is to ensure support for IOS.
 
 ## Estabilishing Connection using QR Code {#connection-scan-qr-ble}
 
@@ -232,35 +224,28 @@ The following figure shows the message exchange.
 ~~~ ascii-art
 +------------+                       +-----------+
 |            |-----PDU ADV_IND------>|           |
-|            |<----Scan_QR_Code------|           |
-| Advertiser |<----SCAN_REQ----------| Scanner   |
-| (Verifier) |-----SCAN_RESP-------->| (Wallet)  |
+| Advertiser |<----Scan_QR_Code------|  Scanner  |
+| (Verifier) |                       | (Wallet)  |
 |            |<----IDENTIFY_REQ------|           |
 +------------+                       +-----------+
 ~~~
 
 Pre-requisites: The Verifier has opened it's application and displays a QR Code.
 
-1. The user scans the QR Code (`Scan_QR_Code`), typically the wallet app, which contains the advertisment data as described in (#connection-ble).
-
-All other steps are conducted as described in (#connection-ble).
-
-The data are encoded in an URL as follows:
-
-The URL starts with the custom scheme `OVPBLE`. The encoding of the actual data in the URL path follows the same rules given in (#connection-ble):
-
-* The first part delimited by a "_" is a human readable identifier of the Verifier (RP). The first "_" in the advertisement should be used a delimiter. Other "_" could be associate with base64url.
-* The rest of the path contains the verifier's ephemeral X25519 key in hex encoding (as defined in Section 5 of [@!RFC4648]). 
-
-Sample QR Code 
+1. The user scans the QR Code (`Scan_QR_Code`) using the wallet app. Sample QR Code as below.
 
 ```
-OPENID4VP://connect?name=STADIONENTRANCE&key=8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a&nonce=6e91ab1b48396d3e 
+OPENID4VP://connect?name=STADIONENTRANCE&key=8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a 
 ```
+2. Wallet generates a X25519 ([@!RFC7748]) key pair of its own and combines to create a DHE [secret key](#encryption). 
+3. Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-request) 
+4. Verifier calculates DHE secret key based on its key pair and the wallet's public key.
 
-How the connection setup request reaches a Wallet of a user's choice that capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). The most certain way for a QR code to reach a target Wallet is to use a camera feature in a Wallet Application itself to scan a QR code.
+The URL starts with the custom scheme `OPENID4VP`. The key contains the verifier's ephemeral X25519 key in hex encoding (as defined in Section 5 of [@!RFC4648]). 
 
-# OpenID4VP Request over BLE
+How the connection setup request reaches a Wallet of a user's choice thats capable of handling the request is out of scope of this specification(i.e. the usage of the Custom URL Schemes, Claimed URLs, etc.). The most certain way for a QR code to reach a target Wallet is to use a camera feature in a Wallet Application itself to scan a QR code.
+
+# OpenID4VP Request over BLE {#identify-request}
 
 ## BLE layer
 
@@ -289,7 +274,6 @@ MUST not be present if a 'scope' parameter is present.
 The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
 
 The following is a non normative example of a request before signing:
-
 ```json
 {
    "iss":"s6BhdRkqt3",
@@ -328,7 +312,7 @@ The following is a non normative example of a request before signing:
 }
 ```
 
-# OpenID4VP Response over BLE
+# OpenID4VP Response over BLE {#identify-response}
 
 ## BLE
 
@@ -367,7 +351,7 @@ The following is a non normative example of a response before signing:
 }
 ```
 
-# BLE Details
+# BLE Service Definition Details
 ## UUID for Service Definition {#service-definition}
 
 The Verifier acts as the server and the Verifier service MUST contain the following characteristics:
@@ -387,28 +371,22 @@ Verifier Service UUID for SCAN_RESP MUST be `00000002-5026-444A-9E0E-D6F2450F3A7
 |Transfer Summary Report| 0000000A-5026-444A-9E0E-D6F2450F3A77 | Notify(Verifier->Wallet)| Summary of the packets received |
 |Disconnect            | 0000000B-5026-444A-9E0E-D6F2450F3A77 | Notify(Verifier->Wallet) | In case verifier wants to disconnect due to unforseen error |
 
-
-TODO: We should plan to register our service with Bluetooth SIG. This is a must and has to be discussed. 
-
-ToDo: Check if there are conventions to the UUID. Original in ISO is `00000001-A123-48CE-896B-4C76973373E6`.
-
-## Identity Request
-
-ToDo: Need to elaborate.
+## Identify Request {#identify-ble-request}
 
 The wallet has to identify itself with the following parameters.
-`wallets ed25519 key`, `nonce`, `encrypted:wallet provider did` ,`encrypted:authentication context`
+`wallets x25519 key`, `nonce`, `encrypted:wallet provider clientid` ,`encrypted:authentication context`
 
+__Note__ All requests would follow the packet structure as defined in the [section](#packet-request-structure)
 
-## Presentation Request (Request Characteristic)
+## Presentation Request {#presentation-request}
 
 Presentation Request MUST include `presentation_definition` parameter as defined in Section  of [OpenID4VP].
 
 `response_type`, `client_id`, `redirect_uri` parameters MUST NOT be present in the Presentation Request.
 
-ToDo: Do we want nonce to be included? I believe we do.
+__Note__ All requests would follow the packet structure as defined in the [section](#packet-request-structure)
 
-## Presentation Response
+## Presentation Response {#presentation-response}
 
 Presentation Response MUST include `presentation_submission` and `vp_token` parameters as defined in Section 6 of [OpenID4VP].
 
@@ -426,9 +404,9 @@ Presentation Response MUST include `presentation_submission` and `vp_token` para
     ] 
 }
 
-**Note:** The actual content can be a gzip [@!RFC1952]. Use the ID2 as per [@!RFC1952] to determine the gzip format. 
+**Note:** The actual content can be a gzip [@!RFC1952]. Use the ID2 as per [@!RFC1952] to determine the gzip format. The binary structure of the response would be based on the stream structure(#packet-stream-structure)
 
-## Stream Write Packet Structure
+## Stream Packet Structure {#packet-stream-structure}
 
 Using the 'Content Size' characteristics the wallet sets the size. Once we receive the confirmation about the write we start the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.
 
@@ -447,35 +425,35 @@ __NOTE__: Limit the max total size to ```~4kb``` for better performance while th
 
 In case of the CRC failure or decryption failure the ```Transfer summary report``` would be used to resend the specifc chunks
 
-## Stream Read Packet Structure
+## Request {#packet-request-structure}
 
-The ```Request Size``` is first called to get the actual size of the request. Once the size of the request is obtained the ```Request``` characteristics is called to get the actual data. The characteristics is called repeatedly until all the requested data is received.
+The ```Request Size``` is first called to get the actual size of the request. Once the size of the request is obtained the ```Request``` characteristic is called to get the actual data. The characteristic is called repeatedly until all the requested data is received.
 
-To read the complete Characteristic Value an ATT_READ_REQ PDU should be used for the first part of the value and ATT_READ_BLOB_REQ PDUs shall used for the rest. The Value Offset parameter of each ATT_READ_BLOB_REQ PDU shall be set to the offset of the next octet within the Characteristic Value that has yet to be read. The ATT_READ_BLOB_REQ PDU is repeated until the ATT_READ_BLOB_RSP PDU’s Part Attribute Value parameter is shorter than (ATT_MTU – 1).
+To read the complete Characteristic Value an ATT_READ_REQ PDU should be used for the first part of the value and ATT_READ_BLOB_REQ PDUs shall be used for the rest. The Value Offset parameter of each ATT_READ_BLOB_REQ PDU shall be set to the offset of the next octet within the Characteristic Value that has yet to be read. The ATT_READ_BLOB_REQ PDU is repeated until the ATT_READ_BLOB_RSP PDU’s Part Attribute Value parameter is shorter than (ATT_MTU – 1).
 
 __NOTE__: In case the Request does not match Size then its assumed its corrupted and the same procedure is repeated again.
 
-## Transfer Summary Request:
+## Transfer Summary Request {#transfer-summary-request}
 
-The wallet would request for a ```Transfer Summary Request``` once all the chunks are sent by the wallet. This is a notification.
+The wallet would request for a ```Transfer Summary Request``` once all the chunks are sent by the wallet. This is a write operation from the wallet.
 
-## Transfer Summary Report:
+## Transfer Summary Report {#transfer-summary-report}
 
-When the Verifier receives the ```Transfer Summary Request``` the verifier would respond with the ```Transfer Summary Report```
+When the Verifier receives the ```Transfer Summary Request``` the verifier would respond with the ```Transfer Summary Report```. This is a notification
 
 The following structure is used to send the summary report. 
 
 |  Chunk sequence number            | Checksum                  |
 |-----------------------------------|---------------------------|
-|  (1 byte each upto max MTU)       |  (2 bytes)                |
+|  (2 byte each upto max MTU)       |  (2 bytes)                |
 
 ** Chunk sequence number: ** List of chunks that are missing or failed CRC.
 
-## Connection closure 
+## BLE Connection closure {#connection-ble-close}
 
 After data retrieval, the Wallet unsubscribes from all characteristics. Most often this is the default flow. While in certain cases the Verifier may be choose to cancel in between a transaction. This can be achieved by the ``` Disconnect ```. Whenever the wallet receives this notification the wallet is expected to initiate the disconnection. 
 
-## Connection re-establishment 
+## Connection re-establishment {#connection-ble-re-establishment}
 
 In case of a lost connection a full flow is conducted again.
 
@@ -494,9 +472,7 @@ In case of a termination, the Wallet and Verifier MUST perform at least the foll
 * Destruction of session keys and related ephemeral key material 
 * Closure of the communication channel used for data retrieval.
 
-[SASI] TODO: Should we support multiple encryption type or pick the single encryption route?
-
-# Encryption
+# Encryption {#encryption-details}
 
 ## Overview
 
@@ -541,7 +517,7 @@ The encryption of the data happens before any of the request size or response si
 
 The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input for the GCM function MUST be an empty string. The plaintext used as input for the GCM function MUST be Wallet request or Wallet response. The value of the data element in the session establishment and session data messages as defined in 9.1.1.4 MUST be the concatenation of the ciphertext and all 16 bytes of the authentication tag (ciphertext || authentication tag).
 
-# Security Considerations
+# Security Considerations {#security}
 
 ## Session Information
 
