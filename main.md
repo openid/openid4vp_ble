@@ -161,6 +161,14 @@ Speaking in BLE terms, the Verifier takes the role of the "Peripheral GAP Role" 
 
 This section describes how Verifier and the Wallet can establish a connection using Verifier-initiated BLE Advertisement. This mechanism can be used by the Verifiers when the use-case does not allow the End-Users to scan a QR code displayed on the Verifier's device, for example to ensure the safety of the Verifier.
 
+The Verifier acts as the server and the Verifier service MUST contain the following characteristics:
+
+Verifier Service UUID MUST be `00000001-5026-444A-9E0E-D6F2450F3A77`.
+
+Verifier Service UUID for SCAN_RESP MUST be `00000002-5026-444A-9E0E-D6F2450F3A77`.
+
+Note: The special service UUID for the `SCAN_RESP` is used to ensure support for iOS.
+
 The following figure shows the message exchange.
 
 ~~~ ascii-art
@@ -174,14 +182,13 @@ The following figure shows the message exchange.
 
 Pre-requisites: The Verifier has opened it's application and started the mode that accepts OpenID4VP.
 
-1. The Verifier starts the BLE advertisement (`PDU ADV_IND`). The advertisment message starts with the prefix `OVP` (see below) and includes the first 5 bytes of the verifier's ephemeral key.
-2. The Wallet scans the BLE layer. If there is only a single Verifier sending an advertisment message with the `OVP` prefix, the Wallet may automatically select this Verifier. Otherwise, if there are multiple verifiers the user is asked to choose. 
-3. The Wallet connects to the Verifier (`SCAN_REQ`). The remaining 27 byte of the Verifier's ephemeral key is provided in the scan response (`SCAN_RESP`).
-4. The Wallet generates its ephemeral key pair and combines both keys to create a DHE secret key as described in (#encryption). 
-5. The Wallet sends an identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-ble-request) 
-6. The Verifier calculates the DHE secret key based on its key pair and the wallet's public key as described in (#encryption).
+1. The Verifier starts the BLE advertisement (`PDU ADV_IND`) using the service UUID `00000001-5026-444A-9E0E-D6F2450F3A77`. The advertisment message starts with the prefix `OVP` (see below) and includes the first 5 bytes of the verifier's ephemeral key.
+2. The Wallet scans the BLE layer and sends a `SCAN_REQ` to the Verifier acknowledging the advertisment. If there is only a single Verifier sending an advertisment message with the `OVP` prefix, the Wallet may automatically select this Verifier. Otherwise, if there are multiple verifiers the user is asked to choose. 
+3. On Receiving the `SCAN_REQ`, the verifier sends a `SCAN_RESP` to the particular Wallet using the service UUID `00000002-5026-444A-9E0E-D6F2450F3A77`. This request contains the remaining 27 byte of the Verifier's ephemeral key.
+4. The Wallet generates its ephemeral key pair and combines both keys to create a DHE secret key as described in (#encryption). The Wallet then sends an identify request (`IDENTIFY_REQ`, see (#identify-ble-request)) and submits its public key to the verifier in plain text. The Verifier calculates the DHE secret key based on its key pair and the wallet's public key as described in (#encryption).
 
 Note: While the Verifier can be active for a long time and process multiple connections (based on the same Verifier key), it's expected that the range of the verifiers advertisement is limited based on the application's requirement. Verifiers are expected to provide the necessary controls to limit the range.
+### BLE Advertisement Structure
 
 BLE Advertisement Packet structure is defined as follows:
 
@@ -201,6 +208,8 @@ PDU:
 
 The data in the Advertisement Packet contain the prefix `OVP` indicating that the verifier is ready to accept connections for OpenID 4 VPs. A human readable name of the verifier is given in the next part.  The rest of the data packet after the `_` contains the first 5 bytes of the public key (example: `8520f00989´). (max. available size 20 byte). 
 
+### Scan Response Structure
+
 The Scan Response (`SCAN_RESP`) structure is defined as follows:
 
 ```
@@ -210,8 +219,6 @@ Payload: (31 bytes)
             Data: 30a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a
 ```
 It provides the Wallet with the remaining 27 byte of the Verifier's ephemeral key.
-
-Note: The `SCAN_RESP` has a special service UUID. This is to ensure support for iOS.
 
 ## QR Code {#connection-scan-qr-ble}
 
@@ -236,7 +243,7 @@ Pre-requisites: The Verifier has opened it's application and displays a QR Code.
 OPENID4VP://connect?name=STADONENTRY&key=8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a 
 ```
 2. The Wallet generates its epheremal key pair and combines it with the Verifer's ephemeral key to create a DHE [secret key](#encryption). 
-3. The Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text [see below](#identify-ble-request) 
+3. The Wallet makes identify request (`IDENTIFY_REQ`) and submits its public key to the verifier in plain text (see (#identify-ble-request)).
 4. The Verifier calculates the DHE secret key based on its key pair and the wallet's public key.
 
 The URL in the QR Code starts with the custom scheme `OPENID4VP` and the path is set to `connect`. The URL contains the following URI query parameters: 
@@ -246,22 +253,127 @@ The URL in the QR Code starts with the custom scheme `OPENID4VP` and the path is
 
 A Custom URL scheme is used to enable activation of a Wallet of the End-User's choice thats capable of handling the request even if the QR Code is scanned with a camera app.
 
+## Identify Request {#identify-ble-request}
+
+This request is sent by the Wallet to the Verifier to finalize the connection establishment.
+
+The Verifier's UUID service MUST be `00000006-5026-444A-9E0E-D6F2450F3A77`.
+
+The request carries the following parameters: 
+
+* `wallets x25519 key` <TBD required/optional, type, meaning>
+* `nonce` <TBD required/optional, type, meaning>
+* `encrypted:wallet provider clientid` <would remove for now and file issue instead>
+* `encrypted:authentication context` <would remove for now and file issue instead>
+
+## Session Key Computation
+
+To calculate the session keys, the Wallet and the Verifier MUST perform ECKA-DH (Elliptic Curve Key Agreement Algorithm – Diffie-Hellman) as defined in BSI TR-03111. The `Zab` output defined in BSI TR-03111 MUST be used to derive two keys. 
+
+The Verifier MUST derive its session key using HKDF as defined in [@!RFC5869] with the following parameters: 
+
+* Hash: SHA-256 
+* IKM: Zab 
+* salt: SHA-256
+* info: “SKVerifier” (encoded as ASCII string) 
+* L: 32 octets 
+
+The Wallet MUST derive its session key using HKDF as defined in [@!RFC5869] with the following parameters: 
+
+* Hash: SHA-256 
+* IKM: Zab 
+* salt: SHA-256
+* info: “SKWallet” (encoded as ASCII string) 
+* L: 32 octets 
+
+# BLE Message Handling
+## Encryption {#encryption}
+
+For encryption AES-256-GCM (192) (GCM: Galois Counter Mode) as defined in NIST SP 800-38D or ChaCha20 [@!RFC8439] MUST be used. 
+
+The IV (Initialization Vector defined in NIST SP 800-38D) used for encryption MUST have the default length of 12 bytes for GCM, as specified in NIST SP 800-38D. The IV is the random nonce generated by the wallet provided in the Identify Request (see (#identify-ble-request)). 
+
+The encryption of the data happens before any of the request size or response size is provided. So the entire data is encrypted with AES GCM 256 bit using the derived session keys. Due to this requirement there is no message counter requirement in this design. Also the fact that every wallet would send a random nonce and a random ephemeral public key, it is assumed the interaction is also save with a long term verifier key. This gives us with more probability of randomness in key derivation.  
+
+The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input for the GCM function MUST be an empty string. The plaintext used as input for the GCM function MUST be Wallet request or Wallet response. The value of the data element in the session establishment and session data messages as defined in 9.1.1.4 MUST be the concatenation of the ciphertext and all 16 bytes of the authentication tag (ciphertext || authentication tag).
+
+## Messages Transmission {#message_transmission}
+
+The protocol uses variable length messages to convey the presentation request and the presentation response. The design for those message exchanges uses the following pattern:  
+
+For every of those requests/responses, there is one dedicated characterics to obtain the messages size, e.g. for the presentation request, this is the characteristics with the service UUID `00000004-5026-444A-9E0E-D6F2450F3A77`. 
+
+The transmission of the actual payload is performed through another dedicated characteristics. For the presentation request, that is the service UUID `00000005-5026-444A-9E0E-D6F2450F3A77`. Depending on the MTU size, the sender splits the message into chucks and uses the transmission characteristics multiple times to transfer the chunks. 
+QUESTION: is there an acknowledgment, if the receiver received the data or how does the sender know when to send the next chunk?
+
+In order to detect packet loss, the sender requests a transfer summary report from the receiver after it has concluded the transmission. The transfer summary always uses the same Service UUIDs:
+
+|Characteristic name | UUID                                 | Type| Description         |
+|--------------------|--------------------------------------|-----------------------|---------------------|
+|Transfer Summary Request| 00000009-5026-444A-9E0E-D6F2450F3A77 | Write(Wallet->Verifier)| Summary of the packets received |
+|Transfer Summary Report| 0000000A-5026-444A-9E0E-D6F2450F3A77 | Notify(Verifier->Wallet)| Summary of the packets received |
+
+Note: Verifier and Wallet may have different roles with respect to the transfer summary report characteristics depending on the direction of the data flow.
+
+### Request Transmission {#packet-request-structure}
+
+The JSON payload is encoded using JWS Compact serialization. The request size is the number of bytes that will be sent over BLE, the size of (JWS) in bytes. 
+
+The actual content of the message can be a gzip [@!RFC1952]. In this case the size transmitted is the number of bytes of the gzip. Use the ID2 as per [@!RFC1952] to determine the gzip format. 
+
+The `Request Size` characteristics is used to convey the request size. 
+
+Once the size of the request is obtained, the `Request` characteristic is called to get the actual data. The characteristics is called repeatedly until all the requested data is received.
+
+To read the complete Characteristic Value an ATT_READ_REQ PDU should be used for the first part of the value and ATT_READ_BLOB_REQ PDUs shall be used for the rest. The Value Offset parameter of each ATT_READ_BLOB_REQ PDU shall be set to the offset of the next octet within the Characteristic Value that has yet to be read. The ATT_READ_BLOB_REQ PDU is repeated until the ATT_READ_BLOB_RSP PDU’s Part Attribute Value parameter is shorter than (ATT_MTU – 1).
+
+NOTE: In case the Request does not match Size then its assumed its corrupted and the same procedure is repeated again.
+### Stream Packet Structure {#packet-stream-structure}
+
+Using the 'Content Size' characteristics the wallet sets the size. Once we receive the confirmation about the write we start the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.
+                                                       
+|  Chunk sequence no    |            Chunk payload            | Checksum value of data    |
+|-----------------------|-------------------------------------|---------------------------|
+|      (2 bytes)        |        (upto MTU-4 bytes - 2 bytes) | (2 bytes)        |
+  
+**Chunk Sequence No:** Running unsigned counter for the chunk and starts with 1 (Max 65535)
+
+**Chunk Payload:** Chunk data.
+
+**Checksum:** 2 bytes CRC16-CCITT-False (unsigned)
+
+NOTE: Limit the max total size to ```~4kb``` for better performance while the protocol can handle larger size. In case the Request does not match Size then its assumed to be corrupted and the wallet is expected to send the requested chunks based on the ``` Transfer Summary Request ```.
+
+In case of the CRC failure or decryption failure the ```Transfer summary report``` would be used to resend the specifc chunks
+
+## Transfer Summary Request {#transfer-summary-request}
+
+The wallet would request for a `Transfer Summary Request` once all the chunks are sent by the wallet. This is a write operation from the wallet.
+
+## Transfer Summary Report {#transfer-summary-report}
+
+When the Verifier receives the ```Transfer Summary Request```, the verifier MUST respond with the ```Transfer Summary Report```. This is a notification.
+
+The following structure is used to send the summary report. 
+
+|  Chunk sequence number            | Checksum                  |
+|-----------------------------------|---------------------------|
+|  (2 byte each upto max MTU)       |  (2 bytes)                |
+
+** Chunk sequence number: ** List of chunks that are missing or failed CRC.
+
 # OpenID4VP Request over BLE {#identify-request}
 
 ## BLE layer
 
-On the BLE layer, the Wallet reads the following characteristics from the Verifier:  
+On the BLE layer, the transmission of the payload is performed as described in (#message_transmission), where the following characteristics are used:  
 
-1. Request Size (00000004-5026-444A-9E0E-D6F2450F3A77): used to obtain the size of the presentation request (calculation see below).
-2. Request (00000005-5026-444A-9E0E-D6F2450F3A77): used to obtain the actual JSON payload constituting the presentation request.
-
-The JSON payload is encoded using JWS Compact serialization. The request size is the number of bytes that will be sent over BLE, the size of (JWS) in bytes 
-
-Note: Entire payload is encrypted on the BLE layer using the session key determined as defined above. 
+1. Request Size `00000004-5026-444A-9E0E-D6F2450F3A77`: to obtain the size of the presentation request (calculation see (#packet-request-structure)).
+2. Request `00000005-5026-444A-9E0E-D6F2450F3A77`: to obtain the actual JSON payload constituting the presentation request.
 
 ## Payload
 
-The Request (00000005-5026-444A-9E0E-D6F2450F3A77) contains a signed request object containing the parameters as defined in [@!OpenID4VP].
+The Request contains a signed request object containing the parameters as defined in [@!OpenID4VP].
 
 The following request parameters are supported by this specification:
 
@@ -317,12 +429,10 @@ The following is a non normative example of a request before signing:
 
 ## BLE
 
-On the BLE layer the wallet writes the following characteristics in order to send a presentation response:
+On the BLE layer, the transmission of the payload is performed as described in (#message_transmission), where the following characteristics are used:  
 
-1. Response Size  (00000007-5026-444A-9E0E-D6F2450F3A77): used to transmit the content size of the presentation response
-2. Submit Response (00000008-5026-444A-9E0E-D6F2450F3A77): used to write the JSON payload of the presentation response as chunks.
-
-__Note:__ All payload is encrypted on the BLE layer using the session key determined as defined above. 
+1. Response Size  `00000007-5026-444A-9E0E-D6F2450F3A77`:  to transmit the content size of the presentation response
+2. Submit Response `00000008-5026-444A-9E0E-D6F2450F3A77`: to write the JSON payload of the presentation response as chunks.
 
 ## Payload
 
@@ -350,9 +460,35 @@ The following is a non normative example of a response before signing:
    "vp_token":"eyJhbGciOiJFUzI...XK9n2861OaHDQ"
 }
 ```
+# Disconnect
 
-# BLE Service Definition Details
-## UUID for Service Definition {#service-definition}
+The Wallet will disconnect after providing a presentation response to the Verifier. 
+The Verifier cannot disconnect but only timeout.
+
+## BLE Connection closure {#connection-ble-close}
+
+After data retrieval, the Wallet unsubscribes from all characteristics. Most often this is the default flow. While in certain cases the Verifier may be choose to cancel in between a transaction. This can be achieved by the ``` Disconnect ```. Whenever the wallet receives this notification the wallet is expected to initiate the disconnection. 
+
+## Session Termination {#session-termination}
+
+The session MUST be terminated if at least one of the following conditions occur: 
+
+* After a time-out of no activity occurs. 
+* If the Wallet does not want to receive any further requests. 
+* If the Verifier does not want to send any further requests. 
+
+Termination is as per the default BLE write. 
+
+In case of a termination, the Wallet and Verifier MUST perform at least the following actions: 
+
+* Destruction of session keys and related ephemeral key material 
+* Closure of the communication channel used for data retrieval
+
+## Connection re-establishment {#connection-ble-re-establishment}
+
+In case of a lost connection a full flow is conducted again.
+
+# UUID for Service Definition {#service-definition}
 
 The Verifier acts as the server and the Verifier service MUST contain the following characteristics:
 
@@ -370,147 +506,6 @@ Verifier Service UUID for SCAN_RESP MUST be `00000002-5026-444A-9E0E-D6F2450F3A7
 |Transfer Summary Request| 00000009-5026-444A-9E0E-D6F2450F3A77 | Write(Wallet->Verifier)| Summary of the packets received |
 |Transfer Summary Report| 0000000A-5026-444A-9E0E-D6F2450F3A77 | Notify(Verifier->Wallet)| Summary of the packets received |
 |Disconnect            | 0000000B-5026-444A-9E0E-D6F2450F3A77 | Notify(Verifier->Wallet) | In case verifier wants to disconnect due to unforseen error |
-
-## Identify Request {#identify-ble-request}
-
-The wallet has to identify itself with the following parameters.
-`wallets x25519 key`, `nonce`, `encrypted:wallet provider clientid` ,`encrypted:authentication context`
-
-Note: All requests MUST follow the packet structure as defined in the [section](#packet-request-structure)
-
-## Presentation Request {#presentation-request}
-
-Presentation Request MUST include `presentation_definition` parameter as defined in Section  of [OpenID4VP].
-
-`response_type`, `client_id`, `redirect_uri` parameters MUST NOT be present in the Presentation Request.
-
-Note: All requests would follow the packet structure as defined in the [section](#packet-request-structure)
-
-## Presentation Response {#presentation-response}
-
-Presentation Response MUST include `presentation_submission` and `vp_token` parameters as defined in Section 6 of [OpenID4VP].
-
-{
-    "presentation_submission": {
-
-    },
-    "vp_token": [
-        {
-            VP1
-        },
-        {
-            VP2
-        }
-    ] 
-}
-
-Note: The actual content can be a gzip [@!RFC1952]. Use the ID2 as per [@!RFC1952] to determine the gzip format. The binary structure of the response would be based on the stream structure (#packet-stream-structure)
-
-## Stream Packet Structure {#packet-stream-structure}
-
-Using the 'Content Size' characteristics the wallet sets the size. Once we receive the confirmation about the write we start the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.
-                                                       
-|  Chunk sequence no    |            Chunk payload            | Checksum value of data    |
-|-----------------------|-------------------------------------|---------------------------|
-|      (2 bytes)        |        (upto MTU-4 bytes - 2 bytes) | (2 bytes)        |
-  
-**Chunk Sequence No:** Running unsigned counter for the chunk and starts with 1 (Max 65535)
-
-**Chunk Payload:** Chunk data.
-
-**Checksum:** 2 bytes CRC16-CCITT-False (unsigned)
-
-NOTE: Limit the max total size to ```~4kb``` for better performance while the protocol can handle larger size. In case the Request does not match Size then its assumed to be corrupted and the wallet is expected to send the requested chunks based on the ``` Transfer Summary Request ```.
-
-In case of the CRC failure or decryption failure the ```Transfer summary report``` would be used to resend the specifc chunks
-
-## Request {#packet-request-structure}
-
-The ```Request Size``` is first called to get the actual size of the request. Once the size of the request is obtained the ```Request``` characteristic is called to get the actual data. The characteristic is called repeatedly until all the requested data is received.
-
-To read the complete Characteristic Value an ATT_READ_REQ PDU should be used for the first part of the value and ATT_READ_BLOB_REQ PDUs shall be used for the rest. The Value Offset parameter of each ATT_READ_BLOB_REQ PDU shall be set to the offset of the next octet within the Characteristic Value that has yet to be read. The ATT_READ_BLOB_REQ PDU is repeated until the ATT_READ_BLOB_RSP PDU’s Part Attribute Value parameter is shorter than (ATT_MTU – 1).
-
-NOTE: In case the Request does not match Size then its assumed its corrupted and the same procedure is repeated again.
-
-## Transfer Summary Request {#transfer-summary-request}
-
-The wallet would request for a ```Transfer Summary Request``` once all the chunks are sent by the wallet. This is a write operation from the wallet.
-
-## Transfer Summary Report {#transfer-summary-report}
-
-When the Verifier receives the ```Transfer Summary Request```, the verifier MUST respond with the ```Transfer Summary Report```. This is a notification.
-
-The following structure is used to send the summary report. 
-
-|  Chunk sequence number            | Checksum                  |
-|-----------------------------------|---------------------------|
-|  (2 byte each upto max MTU)       |  (2 bytes)                |
-
-** Chunk sequence number: ** List of chunks that are missing or failed CRC.
-
-## BLE Connection closure {#connection-ble-close}
-
-After data retrieval, the Wallet unsubscribes from all characteristics. Most often this is the default flow. While in certain cases the Verifier may be choose to cancel in between a transaction. This can be achieved by the ``` Disconnect ```. Whenever the wallet receives this notification the wallet is expected to initiate the disconnection. 
-
-## Connection re-establishment {#connection-ble-re-establishment}
-
-In case of a lost connection a full flow is conducted again.
-
-## Session Termination {#session-termination}
-
-The session MUST be terminated if at least one of the following conditions occur: 
-
-* After a time-out of no activity occurs. 
-* If the Wallet does not want to receive any further requests. 
-* If the Verifier does not want to send any further requests. 
-
-Termination is as per the default BLE write. 
-
-In case of a termination, the Wallet and Verifier MUST perform at least the following actions: 
-
-* Destruction of session keys and related ephemeral key material 
-* Closure of the communication channel used for data retrieval.
-
-# Encryption {#encryption-details}
-
-## Overview
-
-1. The Wallet obtains Verifier's ephemeral key pair and partial random nonce in the Connection Setup Request from BLE Advertisement or a QR Code.
-2. The Wallet generates an ephemeral key pair
-3. The Wallet communicates its ephemeral public key & a 12 byte random nonce to the Verifier in the Identity Request.
-4. The Verifier derives an encryption key using the Wallet's public key received in the Idenity Request, and encrypts Presentation Request using it.
-5. The Wallet derives an encryption key using the Verifier's public key received in the Connection Set Up phase, decrypts Presentation Request and encrypts Presentation Response using it.
-6. The Verifier decrypts Presentation Response using the encryption key computed in step 4.
-
-Note that Connection Setup Request itself defined in (#connection-set-up) MUST NOT be encrypted.
-
-## Session Key Computation
-
-To calculate the session keys, the Wallet and the Verifier MUST perform ECKA-DH (Elliptic Curve Key Agreement Algorithm – Diffie-Hellman) as defined in BSI TR-03111. The Zab output defined in BSI TR-03111 MUST be used to derive 2 keys. 
-
-The Verifier MUST derive session key using HKDF as defined in [@!RFC5869] with the following parameters: 
-
-* Hash: SHA-256 
-* IKM: Zab 
-* salt: SHA-256
-* info: “SKVerifier” (encoded as ASCII string) 
-* L: 32 octets 
-
-The Wallet MUST derive session key using HKDF as defined in [@!RFC5869] with the following parameters: 
-
-* Hash: SHA-256 
-* IKM: Zab 
-* salt: SHA-256
-* info: “SKWallet” (encoded as ASCII string) 
-* L: 32 octets 
-
-For encryption AES-256-GCM (192) (GCM: Galois Counter Mode) as defined in NIST SP 800-38D or ChaCha20 [@!RFC8439] MUST be used. 
-
-The IV (Initialization Vector defined in NIST SP 800-38D) used for encryption MUST have the default length of 12 bytes for GCM, as specified in NIST SP 800-38D. The IV is the random nonce generated by the wallet. 
-
-The encryption of the data happens before any of the request size or response size is provided. So the entire data is encrypted with AES GCM 256 bit using the derived session keys. Due to this requirement there is no message counter requirement in this design. Also the fact that every wallet would send a random nonce and a random ephemeral public key we can assume a safe interaction with a long term verifier key. This gives us with more probability of randomness in key derivation.  
-
-The AAD (Additional Authenticated Data defined in NIST SP 800-38D) used as input for the GCM function MUST be an empty string. The plaintext used as input for the GCM function MUST be Wallet request or Wallet response. The value of the data element in the session establishment and session data messages as defined in 9.1.1.4 MUST be the concatenation of the ciphertext and all 16 bytes of the authentication tag (ciphertext || authentication tag).
 
 # Security Considerations {#security}
 
