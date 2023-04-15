@@ -124,7 +124,7 @@ Below is the diagram that illustrates the protocol flow:
 |  GAP Role,  |       +----------+                      |  Role,         |
 |  Server)    |                                         |  Client)       |
 |             |<---- (5) OpenID4VP Response over BLE ---|                |
-|             |      (verifiable presentation as chunk) |                |
+|             |    (verifiable presentation as a chunk) |                |
 |             |                                         |                |
 |             |<---- (6) Transfer Summary Request ------|                |
 |             |                                         |                |
