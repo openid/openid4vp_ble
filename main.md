@@ -114,7 +114,7 @@ Below is the diagram that illustrates the protocol flow:
 |             |          identifiers to the verifier    |                |
 |             |                                         |                |
 |             |                                         |                |
-|             |----- (3) OpenID4VP Request over BLE --->|                |
+|             |----- (3) OpenID4VP Request over BLE, -->|                |
 |             |          verify the requester           |                |
 |             |       +----------+                      |                |
 |             |       |          |                      |                |
