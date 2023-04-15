@@ -468,7 +468,7 @@ The Verifier cannot disconnect but only timeout.
 
 ## BLE Connection closure {#connection-ble-close}
 
-After data retrieval, the Wallet unsubscribes from all characteristics. Most often this is the default flow. While in certain cases the Verifier may be choose to cancel in between a transaction. This can be achieved by the ``` Disconnect ```. Whenever the wallet receives this notification the wallet is expected to initiate the disconnection. 
+After data retrieval, the Wallet unsubscribes from all characteristics. Most often this is the default flow. While in certain cases the Verifier may choose to cancel in the middle of a transaction. This can be achieved by the ``` Disconnect ```. Whenever the wallet receives this notification the wallet is expected to initiate the disconnection. 
 
 ## Session Termination {#session-termination}
 
