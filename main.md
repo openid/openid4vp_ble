@@ -327,7 +327,8 @@ Once the size of the request is obtained, the `Request` characteristic is called
 
 To read the complete Characteristic Value an ATT_READ_REQ PDU should be used for the first part of the value and ATT_READ_BLOB_REQ PDUs shall be used for the rest. The Value Offset parameter of each ATT_READ_BLOB_REQ PDU shall be set to the offset of the next octet within the Characteristic Value that has yet to be read. The ATT_READ_BLOB_REQ PDU is repeated until the ATT_READ_BLOB_RSP PDU’s Part Attribute Value parameter is shorter than (ATT_MTU – 1).
 
-NOTE: In case the Request does not match Size then its assumed its corrupted and the same procedure is repeated again.
+NOTE: In case the Request does not match the size then it is assumed it is corrupted and the same procedure is repeated again.
+
 ### Stream Packet Structure {#packet-stream-structure}
 
 Using the 'Content Size' characteristics the wallet sets the size. Once we receive the confirmation about the write we start the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.
