@@ -331,7 +331,7 @@ NOTE: In case the Request does not match the size then it is assumed it is corru
 
 ### Stream Packet Structure {#packet-stream-structure}
 
-Using the 'Content Size' characteristics the wallet sets the size. Once we receive the confirmation about the write we start the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.
+Using the 'Content Size' characteristics the wallet sets the size. Once it receives the confirmation about the write, the wallet starts the 'Submit VC' as a stream. 'Submit VC' is called multiple times until all the data is sent.
                                                        
 |  Chunk sequence no    |            Chunk payload            | Checksum value of data    |
 |-----------------------|-------------------------------------|---------------------------|
