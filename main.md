@@ -83,7 +83,7 @@ The protocol consists of the following steps:
 
 Wallet and the Verifier MUST implement BLE according to the [@!Bluetooth.4.2.Core] specification. 
 
-## Limitation
+## Limitations
 
 The following limitations in BLE stack 4.2 need to be considerate: 
 
