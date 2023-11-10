@@ -68,7 +68,7 @@ This draft uses the terms and definitions from [@!OpenID4VP], section 2.
 
 ## Admission control at a venue 
 
-The user needs to present her electronic ticket (represented by a verifiable credentioal) when entering a venue. She opens her wallet and authenticates towards the wallet. She then scans the QR code at the entrance with her wallet. The wallet determines the credential (the ticket) required by the verifier and asks for consent to share the respective credential. The credential is then transmitted to the verifier, which, after validation, allows her to enter the venue, e.g. by opening the turnstile.  
+The user needs to present her electronic ticket (represented by a verifiable credential) when entering a venue. She opens her wallet and authenticates towards the wallet. She then scans the QR code at the entrance with her wallet. The wallet determines the credential (the ticket) required by the verifier and asks for consent to share the respective credential. The credential is then transmitted to the verifier, which, after validation, allows her to enter the venue, e.g. by opening the turnstile.
 
 # Overview 
 
@@ -85,14 +85,14 @@ Wallet and the Verifier MUST implement BLE according to the [@!Bluetooth.4.2.Cor
 
 ## Limitations
 
-The following limitations in BLE stack 4.2 need to be considerate: 
+The following limitations in BLE stack 4.2 need to be considered:
 
 1. Advertisement
     * The advertisement message can contain only a max. of 23 bytes in the request and 27 bytes in response.
     * The advertisement scan request can not have any custom data.
     * The scan response can have custom data. 
 2. Timing
-    * BLE Scanning and advertising are discrete events, so not every advertisement is received (an advertisment is sent for at most 30s) 
+    * BLE Scanning and advertising are discrete events, so not every advertisement is received (an advertisement is sent for at most 30s)
 3. Throughput
     * The data rate, which can be expected, is about 0.10 Mbps. 
     * The calculation is as follows: 
@@ -140,7 +140,7 @@ Note: The arrow mark indicates a read or write by the wallet.
    * "-->" Read by wallet
    * "<--" Write by wallet
 
-1. Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: A QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier. The Wallet obtains the advertisment data, including the Verifier's ephemeral key, using one of those messages. It then creates its own ephemeral key and derives the session secret key as defined in (#encryption). 
+1. Verifier and the Wallet establish the connection. This specification defines two mechanisms to do so: A QR code displayed by the Verifier and BLE Advertisement initiated by the Verifier. The Wallet obtains the advertisement data, including the Verifier's ephemeral key, using one of those messages. It then creates its own ephemeral key and derives the session secret key as defined in (#encryption).
 2. The Wallet sends its identification information to the Verifier, which also derives the session secret key as defined in (#encryption). All sub-sequent communication is encrypted using this session key.  
 3. The Wallet reads the Presentation Request from the Verifier. 
 4. The Wallet authenticates the user and obtains consent to share the Credential(s) with the Verifier.
@@ -182,8 +182,8 @@ The following figure shows the message exchange.
 
 Pre-requisites: The Verifier has opened it's application and started the mode that accepts OpenID4VP.
 
-1. The Verifier starts the BLE advertisement (`PDU ADV_IND`) using the service UUID `00000001-5026-444A-9E0E-D6F2450F3A77`. The advertisment message starts with the prefix `OVP` (see below) and includes the first 5 bytes of the verifier's ephemeral key.
-2. The Wallet scans the BLE layer and sends a `SCAN_REQ` to the Verifier acknowledging the advertisment. If there is only a single Verifier sending an advertisment message with the `OVP` prefix, the Wallet may automatically select this Verifier. Otherwise, if there are multiple verifiers the user is asked to choose. 
+1. The Verifier starts the BLE advertisement (`PDU ADV_IND`) using the service UUID `00000001-5026-444A-9E0E-D6F2450F3A77`. The advertisement message starts with the prefix `OVP` (see below) and includes the first 5 bytes of the verifier's ephemeral key.
+2. The Wallet scans the BLE layer and sends a `SCAN_REQ` to the Verifier acknowledging the advertisement. If there is only a single Verifier sending an advertisement message with the `OVP` prefix, the Wallet may automatically select this Verifier. Otherwise, if there are multiple verifiers the user is asked to choose.
 3. On Receiving the `SCAN_REQ`, the verifier sends a `SCAN_RESP` to the particular Wallet using the service UUID `00000002-5026-444A-9E0E-D6F2450F3A77`. This request contains the remaining 27 byte of the Verifier's ephemeral key.
 4. The Wallet generates its ephemeral key pair and combines both keys to create a DHE secret key as described in (#encryption). The Wallet then sends an identify request (`IDENTIFY_REQ`, see (#identify-ble-request)) and submits its public key to the verifier in plain text. The Verifier calculates the DHE secret key based on its key pair and the wallet's public key as described in (#encryption).
 
