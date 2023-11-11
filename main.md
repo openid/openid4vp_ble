@@ -384,8 +384,11 @@ MUST not be present if a 'scope' parameter is present.
 * `scope`: CONDITIONAL. The scope value MUST represent a credential presentation request. This parameter MUST NOT be present if a `presentation_definition` parameter is present. 
 * `nonce`: REQUIRED. This value is used to securely bind the verifiable presentation(s) provided by the wallet to the particular transaction.
 * `aud`: OPTIONAL. This value identifies the wallet issuer (as intended recipient of the presentation request).
+* `ble_key`: REQUIRED. A hash of the verifier's ephemeral half-key used in this connection.
 
 The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
+
+When a wallet receives such a request, it MUST verify that it was sent over a BLE channel established with the half-key provided in the request, and it MUST verify the request's signature.
 
 The following is a non normative example of a request before signing:
 ```json
@@ -438,6 +441,9 @@ On the BLE layer, the transmission of the payload is performed as described in (
 ## Payload
 
 The response contains the parameters as defined in Section 6 of [!@OpenID4VP] in JSON encoding. 
+
+The nonce signed as part of the `vp_token` MUST be computed by computing the hash of the nonce provided in the OpenID4VP request (see (#identify-request)) and the wallet's ephemeral half-key used to establish the BLE channel.
+Naturally, when the verifier receives the token, they MUST compute the nonce themselves and verify that they received it over the correct BLE channel.
 
 The following is a non normative example of a response before signing:
 
@@ -510,17 +516,28 @@ Verifier Service UUID for SCAN_RESP MUST be `00000002-5026-444A-9E0E-D6F2450F3A7
 
 # Security Considerations {#security}
 
+## Desired Security Properties
+
+This specification aims to provide three security properties:
+
+* Secrecy: Wallets never leak verifiable presentation tokens sent.
+* Authentication: Whenever a verifier accepts a verifiable presentation token, it was sent by an honest wallet and that wallet sent the token to that verifier.
+* Replay protection: Every verifiable presentation token is accepted exactly once.
+
 ## Session Information
 
 Both wallet and the Verifier MUST remove all the information about the session after its termination.
 
 ## Verifier Authentication
 
-How does the wallet authenticate the Verifier? The verifier signs the presentation request. 
+The wallet authenticates the verifier by verifying the signature of the presentation request.
+We assume that the wallet has been configured with an authentic public key of the verifier in advance.
 
 ## Session Binding
 
-How does the Verifier know a particular response is tied to a particular request? It evaluates the nonce and aud value of the presentation to match the nonce of the request and its client id. 
+The wallet can authenticate the BLE channel by verifying that they established the connection with the half-key contained in the request's `ble_key` field (see (#identify-request)).
+The verifier can authenticate the BLE channel by verifying `aud` and the nonce of the verifiable presentation token (see (#identify-response)).
+Namely, the verifier checks that the `aud` value matches its client ID, and that the nonce contained in the token is a hash of the wallet's ephemeral half-key, and the nonce provided in the request by the verifier.
 
 {backmatter}
 
