@@ -532,6 +532,7 @@ Both wallet and the Verifier MUST remove all the information about the session a
 
 The wallet authenticates the verifier by verifying the signature of the presentation request.
 We assume that the wallet has been configured with an authentic public key of the verifier in advance.
+This could be achieved via cached public keys or trust chains of the verifier.
 
 ## Session Binding
 
