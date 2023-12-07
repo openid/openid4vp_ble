@@ -384,11 +384,11 @@ MUST not be present if a 'scope' parameter is present.
 * `scope`: CONDITIONAL. The scope value MUST represent a credential presentation request. This parameter MUST NOT be present if a `presentation_definition` parameter is present. 
 * `nonce`: REQUIRED. This value is used to securely bind the verifiable presentation(s) provided by the wallet to the particular transaction.
 * `aud`: OPTIONAL. This value identifies the wallet issuer (as intended recipient of the presentation request).
-* `ble_key`: REQUIRED. A hash of the verifier's ephemeral half-key used in this connection.
+* `ble_key`: REQUIRED. A hash of the verifier's ephemeral key used in this connection.
 
 The parameters `response_type` and `redirect_uri` MUST NOT be present in the request.
 
-When a wallet receives such a request, it MUST verify that it was sent over a BLE channel established with the half-key provided in the request, and it MUST verify the request's signature.
+When a wallet receives such a request, it MUST verify that it was sent over a BLE channel established with the ephemeral key provided in the request, and it MUST verify the request's signature.
 
 The following is a non normative example of a request before signing:
 ```json
@@ -442,7 +442,7 @@ On the BLE layer, the transmission of the payload is performed as described in (
 
 The response contains the parameters as defined in Section 6 of [!@OpenID4VP] in JSON encoding. 
 
-The nonce signed as part of the `vp_token` MUST be computed by computing the hash of the nonce provided in the OpenID4VP request (see (#identify-request)) and the wallet's ephemeral half-key used to establish the BLE channel.
+The nonce signed as part of the `vp_token` MUST be computed by computing the hash of the nonce provided in the OpenID4VP request (see (#identify-request)) and the wallet's ephemeral key used to establish the BLE channel.
 Naturally, when the verifier receives the token, they MUST compute the nonce themselves and verify that they received it over the correct BLE channel.
 
 The following is a non normative example of a response before signing:
@@ -535,9 +535,9 @@ We assume that the wallet has been configured with an authentic public key of th
 
 ## Session Binding
 
-The wallet can authenticate the BLE channel by verifying that they established the connection with the half-key contained in the request's `ble_key` field (see (#identify-request)).
+The wallet can authenticate the BLE channel by verifying that they established the connection with the ephemeral key contained in the request's `ble_key` field (see (#identify-request)).
 The verifier can authenticate the BLE channel by verifying `aud` and the nonce of the verifiable presentation token (see (#identify-response)).
-Namely, the verifier checks that the `aud` value matches its client ID, and that the nonce contained in the token is a hash of the wallet's ephemeral half-key, and the nonce provided in the request by the verifier.
+Namely, the verifier checks that the `aud` value matches its client ID, and that the nonce contained in the token is a hash of the wallet's ephemeral key, and the nonce provided in the request by the verifier.
 
 {backmatter}
 
