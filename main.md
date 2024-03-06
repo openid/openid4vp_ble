@@ -203,10 +203,10 @@ PDU:
         Adv Data: (17 byte)
             Adv Type: Complete Local Name
             flag: "LE General Discoverable Mode", "BR/EDR Not Supported"
-            Data: OVPSTADONENTRY_8520f00989 (3 character + 11 character identifier name + 5 bytes of the random X25519 public key)
+            Data: OVPSTADONENTRY_8520f00989 (3 character + 11 character identifier name + 10 character (5 bytes) of the random X25519 public key in hex repr. )
 ```
 
-The data in the Advertisement Packet contain the prefix `OVP` indicating that the verifier is ready to accept connections for OpenID 4 VPs. A human readable name of the verifier is given in the next part.  The rest of the data packet after the `_` contains the first 5 bytes of the public key (example: `8520f00989´). (max. available size for data as defined by BLE is 20 byte). 
+The data in the Advertisement Packet contain the prefix `OVP` indicating that the verifier is ready to accept connections for OpenID 4 VPs. A human readable name of the verifier is given in the next part.  The rest of the data packet after the `_` contains the first 5 bytes of the public key in a hexadecimal representation (example: `8520f00989´). (max. available size for data as defined by BLE is 20 byte). 
 
 ### Scan Response Structure
 
